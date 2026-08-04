@@ -85,12 +85,11 @@ function loadUserSession() {
   if (!topbarEl) return;
 
   const savedPhoto = localStorage.getItem('scamshield_avatar_' + user.email);
-  if (savedPhoto) {
-    topbarEl.innerHTML = `<img src="${savedPhoto}" alt="Profile photo" />`;
-  } else {
-    const initials = user.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
-    topbarEl.textContent = initials;
-  }
+  const avatarHtml = savedPhoto
+    ? `<img src="${savedPhoto}" alt="Profile photo" />`
+    : `<span class="topbar-avatar-initials">${user.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}</span>`;
+
+  topbarEl.innerHTML = `${avatarHtml}<span class="topbar-name">${user.name}</span>`;
 }
 
 // ===== TOGGLE PASSWORD VISIBILITY =====

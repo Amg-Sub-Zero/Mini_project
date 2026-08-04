@@ -10,9 +10,8 @@ const user = raw ? JSON.parse(raw) : null;
 if (user) {
   const firstName = user.name.split(' ')[0];
   const welcomeEl = document.getElementById('welcomeMsg');
-  const topbarEl  = document.getElementById('topbarUser');
   if (welcomeEl) welcomeEl.textContent = `Welcome back, ${firstName} 👋`;
-  if (topbarEl)  topbarEl.textContent  = '👤 ' + user.name;
+  // topbar is handled by auth.js loadUserSession()
 }
 
 // ===== LOAD SCAN HISTORY FROM SESSION STORAGE =====

@@ -3,13 +3,7 @@ if (!sessionStorage.getItem('scamshield_user')) {
   window.location.href = 'index.html';
 }
 
-// Load user in topbar
-const _detectorUser = sessionStorage.getItem('scamshield_user');
-if (_detectorUser) {
-  const u = JSON.parse(_detectorUser);
-  const el = document.getElementById('topbarUser');
-  if (el) el.textContent = '👤 ' + u.name;
-}
+// auth.js handles topbar display via loadUserSession()
 
 // ===== TAB SWITCHING =====
 document.querySelectorAll('.tab').forEach(tab => {
