@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Profile - ScamShield</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/dashboard.css" />
+  <link rel="stylesheet" href="css/profile.css" />
+</head>
+<body class="dashboard-body">
+
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">🛡️ ScamShield</div>
+    <nav class="sidebar-nav">
+      <a href="dashboard.html" class="nav-item">🏠 Dashboard</a>
+      <a href="detector.html" class="nav-item">🔍 Scam Detector</a>
+      <a href="history.html" class="nav-item">📋 Scan History</a>
+      <a href="profile.html" class="nav-item active">👤 Profile</a>
+    </nav>
+    <div class="sidebar-footer">
+      <a href="#" class="nav-item logout" onclick="logout()">🚪 Logout</a>
+    </div>
+  </aside>
+
+  <div class="main-wrapper">
+
+    <header class="topbar">
+      <button class="sidebar-toggle" id="sidebarToggle">☰</button>
+      <div class="topbar-right">
+        <div class="topbar-avatar" id="topbarUser"></div>
+      </div>
+    </header>
+
+    <main class="dashboard-main">
+
+      <div class="profile-header">
+        <h1>Profile</h1>
+        <p>Your account information.</p>
+      </div>
+
+      <div class="profile-card">
+        <div class="profile-avatar-wrapper">
+          <div class="profile-avatar" id="profileAvatar"></div>
+          <label class="avatar-edit-btn" for="avatarInput" title="Change photo">📷</label>
+          <input type="file" id="avatarInput" accept="image/*" hidden />
+        </div>
+
+        <div class="profile-fields">
+          <div class="profile-field">
+            <span class="profile-field-label">Full Name</span>
+            <span class="profile-field-value" id="profileName">—</span>
+          </div>
+          <div class="profile-field">
+            <span class="profile-field-label">Email Address</span>
+            <span class="profile-field-value" id="profileEmail">—</span>
+          </div>
+          <div class="profile-field">
+            <span class="profile-field-label">Total Scans</span>
+            <span class="profile-field-value" id="profileScans">0</span>
+          </div>
+          <div class="profile-field">
+            <span class="profile-field-label">Member Since</span>
+            <span class="profile-field-value" id="profileSince">—</span>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <script src="js/auth.js"></script>
+  <script src="js/profile.js"></script>
+</body>
+</html>

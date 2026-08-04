@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard - ScamShield</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/dashboard.css" />
+</head>
+<body class="dashboard-body">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">🛡️ ScamShield</div>
+    <nav class="sidebar-nav">
+      <a href="dashboard.html" class="nav-item active">🏠 Dashboard</a>
+      <a href="detector.html" class="nav-item">🔍 Scam Detector</a>
+      <a href="history.html" class="nav-item">📋 Scan History</a>
+      <a href="profile.html" class="nav-item">👤 Profile</a>
+    </nav>
+    <div class="sidebar-footer">
+      <a href="#" class="nav-item logout" onclick="logout()">🚪 Logout</a>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <div class="main-wrapper">
+
+    <!-- TOP BAR -->
+    <header class="topbar">
+      <button class="sidebar-toggle" id="sidebarToggle">☰</button>
+      <div class="topbar-right">
+        <div class="topbar-avatar" id="topbarUser"></div>
+      </div>
+    </header>
+
+    <main class="dashboard-main">
+
+      <!-- WELCOME -->
+      <section class="welcome-section">
+        <div>
+          <h1 id="welcomeMsg">Welcome back 👋</h1>
+          <p>Here's a summary of your scam detection activity.</p>
+        </div>
+        <a href="detector.html" class="btn btn-primary">+ New Scan</a>
+      </section>
+
+      <!-- STATS CARDS -->
+      <section class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-card-icon">🔍</div>
+          <div class="stat-card-info">
+            <span class="stat-card-number" id="statTotal">0</span>
+            <span class="stat-card-label">Total Scans</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-icon danger">🚨</div>
+          <div class="stat-card-info">
+            <span class="stat-card-number red" id="statScam">0</span>
+            <span class="stat-card-label">Scams Detected</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-icon success">✅</div>
+          <div class="stat-card-info">
+            <span class="stat-card-number green" id="statSafe">0</span>
+            <span class="stat-card-label">Safe Results</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-icon warning">⚠️</div>
+          <div class="stat-card-info">
+            <span class="stat-card-number yellow" id="statSuspicious">0</span>
+            <span class="stat-card-label">Suspicious</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- RECENT SCANS -->
+      <section class="recent-section">
+        <div class="recent-header">
+          <h2>Recent Scans</h2>
+          <a href="history.html" class="btn btn-outline btn-sm">View All</a>
+        </div>
+        <div class="table-wrapper">
+          <table class="scans-table">
+            <thead>
+              <tr>
+                <th>Input</th>
+                <th>Type</th>
+                <th>Result</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+            <tbody id="recentScansBody">
+              <!-- Populated by JS -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script src="js/auth.js"></script>
+  <script src="js/dashboard.js"></script>
+</body>
+</html>

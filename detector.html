@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Scam Detector - ScamShield</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/dashboard.css" />
+  <link rel="stylesheet" href="css/detector.css" />
+</head>
+<body class="dashboard-body">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">🛡️ ScamShield</div>
+    <nav class="sidebar-nav">
+      <a href="dashboard.html" class="nav-item">🏠 Dashboard</a>
+      <a href="detector.html" class="nav-item active">🔍 Scam Detector</a>
+      <a href="history.html" class="nav-item">📋 Scan History</a>
+      <a href="profile.html" class="nav-item">👤 Profile</a>
+    </nav>
+    <div class="sidebar-footer">
+      <a href="#" class="nav-item logout" onclick="logout()">🚪 Logout</a>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <div class="main-wrapper">
+
+    <header class="topbar">
+      <button class="sidebar-toggle" id="sidebarToggle">☰</button>
+      <div class="topbar-right">
+        <div class="topbar-avatar" id="topbarUser"></div>
+      </div>
+    </header>
+
+    <main class="dashboard-main">
+
+      <div class="detector-header">
+        <h1>Scam Detector</h1>
+        <p>Paste a message, email, or URL below to check if it's a scam.</p>
+      </div>
+
+      <!-- TAB SWITCHER -->
+      <div class="detector-card">
+        <div class="tabs">
+          <button class="tab active" data-tab="message">💬 Text Message</button>
+          <button class="tab" data-tab="email">📧 Email</button>
+          <button class="tab" data-tab="url">🔗 URL</button>
+        </div>
+
+        <!-- MESSAGE TAB -->
+        <div class="tab-content active" id="tab-message">
+          <label class="input-label">Paste the suspicious message below</label>
+          <textarea class="detector-input" id="messageInput" placeholder="e.g. Congratulations! You've been selected for a $500 reward. Click here to claim..." rows="6"></textarea>
+          <div class="input-footer">
+            <span class="char-count" id="messageCount">0 characters</span>
+            <button class="btn btn-primary" onclick="runScan('message')">Scan Message</button>
+          </div>
+        </div>
+
+        <!-- EMAIL TAB -->
+        <div class="tab-content" id="tab-email">
+          <label class="input-label">Paste the email content below</label>
+          <div class="email-fields">
+            <input type="text" class="detector-input-line" id="emailFrom" placeholder="From: sender@example.com" />
+            <input type="text" class="detector-input-line" id="emailSubject" placeholder="Subject: You have a pending payment..." />
+          </div>
+          <textarea class="detector-input" id="emailBody" placeholder="Paste the full email body here..." rows="6"></textarea>
+          <div class="input-footer">
+            <span class="char-count" id="emailCount">0 characters</span>
+            <button class="btn btn-primary" onclick="runScan('email')">Scan Email</button>
+          </div>
+        </div>
+
+        <!-- URL TAB -->
+        <div class="tab-content" id="tab-url">
+          <label class="input-label">Paste the URL you want to check</label>
+          <div class="url-input-row">
+            <input type="url" class="detector-input-line url-field" id="urlInput" placeholder="https://suspicious-link.com/verify-account" />
+            <button class="btn btn-primary" onclick="runScan('url')">Check URL</button>
+          </div>
+          <p class="url-hint">Tip: you can paste the full link including query parameters.</p>
+        </div>
+      </div>
+
+      <!-- RESULT PANEL -->
+      <div class="result-panel" id="resultPanel" style="display:none;">
+        <div class="result-header">
+          <span class="result-icon" id="resultIcon"></span>
+          <div>
+            <h2 class="result-title" id="resultTitle"></h2>
+            <p class="result-subtitle" id="resultSubtitle"></p>
+          </div>
+        </div>
+
+        <div class="result-score-row">
+          <span class="result-score-label">Risk Score</span>
+          <div class="score-bar-wrapper">
+            <div class="score-bar" id="scoreBar"></div>
+          </div>
+          <span class="result-score-value" id="scoreValue"></span>
+        </div>
+
+        <div class="result-flags" id="resultFlags"></div>
+
+        <button class="btn btn-outline btn-sm" onclick="resetScan()">← Scan Another</button>
+      </div>
+
+    </main>
+  </div>
+
+  <script src="js/auth.js"></script>
+  <script src="js/detector.js"></script>
+</body>
+</html>
