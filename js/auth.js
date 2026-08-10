@@ -1,38 +1,14 @@
-// ===== USER STORE — persisted in localStorage =====
-// Seeded with one default account. New registrations are added alongside it.
-function getUsers() {
-  const stored = localStorage.getItem('scamshield_users');
-  if (stored) return JSON.parse(stored);
-  // First run — seed default account
-  const defaults = [{ name: "Shamsudeen Yakubu", email: "shamsudeenyakubu901@gmail.com", password: "Amg" }];
-  localStorage.setItem('scamshield_users', JSON.stringify(defaults));
-  return defaults;
-}
-
-function saveUsers(users) {
-  localStorage.setItem('scamshield_users', JSON.stringify(users));
-}
-
 // ===== LOGIN =====
+// (wired to backend — coming next step)
 document.getElementById('loginForm')?.addEventListener('submit', function (e) {
   e.preventDefault();
-  const email    = document.getElementById('loginEmail').value.trim();
-  const password = document.getElementById('loginPassword').value;
-  const errorEl  = document.getElementById('loginError');
-
-  const users = getUsers();
-  const user  = users.find(u => u.email === email && u.password === password);
-
-  if (user) {
-    sessionStorage.setItem('scamshield_user', JSON.stringify({ name: user.name, email: user.email }));
-    window.location.href = 'dashboard.html';
-  } else {
-    errorEl.style.display = 'block';
-  }
+  const errorEl = document.getElementById('loginError');
+  errorEl.style.display = 'block';
+  errorEl.textContent = '❌ Login is not yet connected. Coming soon.';
 });
 
 // ===== REGISTER =====
-document.getElementById('registerForm')?.addEventListener('submit', function (e) {
+document.getElementById('registerForm')?.addEventListener('submit', async function (e) {
   e.preventDefault();
   const name      = document.getElementById('regName').value.trim();
   const email     = document.getElementById('regEmail').value.trim();
@@ -40,9 +16,11 @@ document.getElementById('registerForm')?.addEventListener('submit', function (e)
   const confirm   = document.getElementById('regConfirm').value;
   const errorEl   = document.getElementById('registerError');
   const successEl = document.getElementById('registerSuccess');
+  const submitBtn = this.querySelector('button[type="submit"]');
 
   errorEl.style.display = 'none';
 
+  // Client-side checks before hitting the server
   if (password !== confirm) {
     errorEl.textContent = '❌ Passwords do not match.';
     errorEl.style.display = 'block';
@@ -55,19 +33,37 @@ document.getElementById('registerForm')?.addEventListener('submit', function (e)
     return;
   }
 
-  const users = getUsers();
+  // Disable button while request is in flight
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Creating account…';
 
-  if (users.find(u => u.email === email)) {
-    errorEl.textContent = '❌ An account with this email already exists.';
+  try {
+    const response = await fetch('http://127.0.0.1:5000/api/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ full_name: name, email: email, password: password })
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      // Success — hide the form and show the confirmation
+      this.style.display = 'none';
+      successEl.style.display = 'block';
+    } else {
+      // Server returned a validation or conflict error
+      errorEl.textContent = '❌ ' + (data.error || 'Registration failed. Please try again.');
+      errorEl.style.display = 'block';
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Create Account';
+    }
+  } catch (err) {
+    // Network error or backend not running
+    errorEl.textContent = '❌ Could not reach the server. Make sure the backend is running.';
     errorEl.style.display = 'block';
-    return;
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Create Account';
   }
-
-  users.push({ name, email, password });
-  saveUsers(users);
-
-  this.style.display = 'none';
-  successEl.style.display = 'block';
 });
 
 // ===== LOGOUT =====
@@ -103,5 +99,8 @@ function togglePassword(inputId, btn) {
     btn.textContent = '👁';
   }
 }
+
+// ===== CLEANUP — remove legacy localStorage user store if present =====
+localStorage.removeItem('scamshield_users');
 
 loadUserSession();
