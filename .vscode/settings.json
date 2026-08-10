@@ -4,5 +4,5 @@
     ".git/**",
     ".vscode/**"
   ],
-  "liveServer.settings.host": "172.20.10.6"
+"liveServer.settings.host": "172.20.10.6"
 }

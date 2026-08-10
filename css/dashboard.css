@@ -125,6 +125,17 @@
   font-size: 0.95rem;
 }
 
+/* Brand in topbar — mobile only */
+.topbar-brand {
+  display: none;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+  flex: 1;
+  text-align: center;
+}
+
 /* ===== DASHBOARD MAIN ===== */
 .dashboard-main {
   padding: 2rem 1.5rem;
@@ -279,8 +290,12 @@
   .sidebar { transform: translateX(-100%); }
   .sidebar.open { transform: translateX(0); }
   .main-wrapper { margin-left: 0; }
-  .sidebar-toggle { display: block; }
+  .sidebar-toggle { display: block; font-size: 1.6rem; }
   .dashboard-main { padding: 1.25rem 1rem; }
+  .topbar { position: relative; }
+  .topbar-brand { display: block; }
+  /* Hide the user name text on mobile, keep only the avatar */
+  .topbar-name { display: none; }
 }
 
 /* ===== SIDEBAR BACKDROP (mobile) ===== */
