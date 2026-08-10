@@ -1,13 +1,30 @@
 // auth.js handles session guard via inline script in <head> of each protected page
 
-// ===== LOAD DATA =====
-function getScans() {
-  return JSON.parse(sessionStorage.getItem('scamshield_scans') || '[]');
+let allScans = [];
+
+// ===== FETCH SCANS FROM BACKEND =====
+async function loadHistory() {
+  const token = localStorage.getItem('access_token');
+  if (!token) return;
+
+  try {
+    const response = await fetch('http://127.0.0.1:5000/api/scans', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+
+    if (!response.ok) return;
+
+    const data = await response.json();
+    allScans   = data.scans || [];
+    applyFilters();
+  } catch (err) {
+    renderHistory([]);
+  }
 }
 
 // ===== RENDER TABLE =====
 function renderHistory(scans) {
-  const tbody = document.getElementById('historyBody');
+  const tbody   = document.getElementById('historyBody');
   const countEl = document.getElementById('historyCount');
 
   if (scans.length === 0) {
@@ -21,23 +38,25 @@ function renderHistory(scans) {
     return;
   }
 
-  const reversed = [...scans].reverse();
-  tbody.innerHTML = reversed.map(scan => `
-    <tr>
-      <td title="${scan.input}">${scan.input}</td>
-      <td><span class="type-tag">${scan.type}</span></td>
-      <td><span class="badge-${scan.result}">${capitalize(scan.result)}</span></td>
-      <td>
-        <div class="mini-bar-wrapper">
-          <div class="mini-bar">
-            <div class="mini-bar-fill ${scan.result}" style="width:${scan.score ?? 0}%"></div>
+  tbody.innerHTML = scans.map(scan => {
+    const date    = new Date(scan.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    const preview = scan.input_text.length > 80 ? scan.input_text.slice(0, 80) + '…' : scan.input_text;
+    return `
+      <tr>
+        <td title="${scan.input_text}">${preview}</td>
+        <td><span class="type-tag">${capitalize(scan.scan_type)}</span></td>
+        <td><span class="badge-${scan.result}">${capitalize(scan.result)}</span></td>
+        <td>
+          <div class="mini-bar-wrapper">
+            <div class="mini-bar">
+              <div class="mini-bar-fill ${scan.result}" style="width:${scan.risk_score ?? 0}%"></div>
+            </div>
+            <span class="mini-score">${scan.risk_score ?? 0}/100</span>
           </div>
-          <span class="mini-score">${scan.score ?? 0}/100</span>
-        </div>
-      </td>
-      <td>${scan.date}</td>
-    </tr>
-  `).join('');
+        </td>
+        <td>${date}</td>
+      </tr>`;
+  }).join('');
 
   countEl.textContent = `Showing ${scans.length} scan${scans.length !== 1 ? 's' : ''}`;
 }
@@ -52,25 +71,27 @@ function applyFilters() {
   const result = document.getElementById('filterResult').value;
   const type   = document.getElementById('filterType').value;
 
-  let scans = getScans();
+  let filtered = [...allScans];
 
-  if (search) scans = scans.filter(s => s.input.toLowerCase().includes(search));
-  if (result !== 'all') scans = scans.filter(s => s.result === result);
-  if (type   !== 'all') scans = scans.filter(s => s.type === type);
+  if (search) filtered = filtered.filter(s => s.input_text.toLowerCase().includes(search));
+  if (result !== 'all') filtered = filtered.filter(s => s.result === result);
+  // Backend scan_type is lowercase: "message", "email", "url"
+  // History filter options are: "Message", "Email", "Link"
+  if (type !== 'all') {
+    const typeMap = { 'Message': 'message', 'Email': 'email', 'Link': 'url' };
+    filtered = filtered.filter(s => s.scan_type === typeMap[type]);
+  }
 
-  renderHistory(scans);
+  renderHistory(filtered);
 }
 
 document.getElementById('searchInput').addEventListener('input', applyFilters);
 document.getElementById('filterResult').addEventListener('change', applyFilters);
 document.getElementById('filterType').addEventListener('change', applyFilters);
 
-// ===== CLEAR HISTORY =====
+// ===== CLEAR HISTORY — not supported via backend yet, just shows a message =====
 document.getElementById('clearBtn').addEventListener('click', () => {
-  if (confirm('Clear all scan history? This cannot be undone.')) {
-    sessionStorage.removeItem('scamshield_scans');
-    renderHistory([]);
-  }
+  alert('Clear history will be available in a future update.');
 });
 
 // ===== SIDEBAR TOGGLE =====
@@ -79,4 +100,4 @@ document.getElementById('sidebarToggle')?.addEventListener('click', () => {
 });
 
 // ===== INIT =====
-renderHistory(getScans());
+loadHistory();

@@ -60,7 +60,7 @@
           <textarea class="detector-input" id="messageInput" placeholder="e.g. Congratulations! You've been selected for a $500 reward. Click here to claim..." rows="6"></textarea>
           <div class="input-footer">
             <span class="char-count" id="messageCount">0 characters</span>
-            <button class="btn btn-primary" onclick="runScan('message')">Scan Message</button>
+            <button type="button" class="btn btn-primary" id="scanMessageBtn">Scan Message</button>
           </div>
         </div>
 
@@ -74,7 +74,7 @@
           <textarea class="detector-input" id="emailBody" placeholder="Paste the full email body here..." rows="6"></textarea>
           <div class="input-footer">
             <span class="char-count" id="emailCount">0 characters</span>
-            <button class="btn btn-primary" onclick="runScan('email')">Scan Email</button>
+            <button type="button" class="btn btn-primary" id="scanEmailBtn">Scan Email</button>
           </div>
         </div>
 
@@ -82,8 +82,8 @@
         <div class="tab-content" id="tab-url">
           <label class="input-label">Paste the URL you want to check</label>
           <div class="url-input-row">
-            <input type="url" class="detector-input-line url-field" id="urlInput" placeholder="https://suspicious-link.com/verify-account" />
-            <button class="btn btn-primary" onclick="runScan('url')">Check URL</button>
+            <input type="text" class="detector-input-line url-field" id="urlInput" placeholder="https://suspicious-link.com/verify-account" />
+            <button type="button" class="btn btn-primary" id="scanUrlBtn">Check URL</button>
           </div>
           <p class="url-hint">Tip: you can paste the full link including query parameters.</p>
         </div>
@@ -109,7 +109,7 @@
 
         <div class="result-flags" id="resultFlags"></div>
 
-        <button class="btn btn-outline btn-sm" onclick="resetScan()">← Scan Another</button>
+        <button type="button" class="btn btn-outline btn-sm" id="resetScanBtn">← Scan Another</button>
       </div>
 
     </main>

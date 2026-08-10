@@ -20,79 +20,81 @@ document.getElementById('emailBody')?.addEventListener('input', function () {
   document.getElementById('emailCount').textContent = this.value.length + ' characters';
 });
 
-// ===== SCAM DETECTION LOGIC =====
-const scamKeywords = [
-  'won', 'winner', 'claim', 'prize', 'reward', 'gift card', 'lottery',
-  'urgent', 'verify', 'suspended', 'confirm your account', 'bank details',
-  'click here', 'free money', 'congratulations', 'password', 'OTP',
-  'transfer funds', 'inheritance', 'investment opportunity', 'act now'
-];
-
-const suspiciousUrlPatterns = [
-  /bit\.ly/i, /tinyurl/i, /goo\.gl/i, /ow\.ly/i,
-  /[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}/,   // IP address as domain
-  /paypa[^l]/i, /arnazon/i, /goggle/i,       // typosquatting
-  /secure.*login/i, /verify.*account/i,
-  /free.*gift/i, /claim.*now/i
-];
-
-function analyzeText(text) {
-  const lower = text.toLowerCase();
-  const hits = scamKeywords.filter(kw => lower.includes(kw));
-  const score = Math.min(100, hits.length * 18 + (text.length > 20 ? 5 : 0));
-  return { score, flags: hits };
+// ===== VERDICT DISPLAY HELPERS =====
+// Maps the backend result string to display label, icon, and subtitle
+function getVerdictDisplay(result) {
+  if (result === 'scam')       return { label: 'Scam Detected', cls: 'scam',       icon: '🚨', sub: 'This content shows strong signs of being a scam. Do not click any links or share personal information.' };
+  if (result === 'suspicious') return { label: 'Suspicious',    cls: 'suspicious', icon: '⚠️', sub: 'This content has some warning signs. Proceed with caution and verify the source.' };
+  return                               { label: 'Looks Safe',   cls: 'safe',       icon: '✅', sub: 'No major red flags detected. Always stay cautious with unsolicited messages.' };
 }
 
-function analyzeUrl(url) {
-  const hits = suspiciousUrlPatterns.filter(p => p.test(url));
-  const score = Math.min(100, hits.length * 30 + (url.length > 60 ? 10 : 0));
-  const flags = hits.map(p => p.toString().replace(/\//g, '').replace(/[iI]$/, '').slice(0, 40));
-  return { score, flags };
-}
-
-function getVerdict(score) {
-  if (score >= 60) return { label: 'Scam Detected', cls: 'scam', icon: '🚨', sub: 'This content shows strong signs of being a scam. Do not click any links or share personal information.' };
-  if (score >= 30) return { label: 'Suspicious', cls: 'suspicious', icon: '⚠️', sub: 'This content has some warning signs. Proceed with caution and verify the source.' };
-  return { label: 'Looks Safe', cls: 'safe', icon: '✅', sub: 'No major red flags detected. Always stay cautious with unsolicited messages.' };
-}
-
-function runScan(type) {
-  let text = '';
+// ===== MAIN SCAN FUNCTION — calls backend API =====
+async function runScan(type) {
+  let input_text = '';
 
   if (type === 'message') {
-    text = document.getElementById('messageInput').value.trim();
-    if (!text) return alert('Please paste a message first.');
+    input_text = document.getElementById('messageInput').value.trim();
+    if (!input_text) return alert('Please paste a message first.');
   } else if (type === 'email') {
-    const from = document.getElementById('emailFrom').value.trim();
+    const from    = document.getElementById('emailFrom').value.trim();
     const subject = document.getElementById('emailSubject').value.trim();
-    const body = document.getElementById('emailBody').value.trim();
-    text = [from, subject, body].join(' ');
+    const body    = document.getElementById('emailBody').value.trim();
     if (!body) return alert('Please paste the email body.');
+    input_text = [from, subject, body].filter(Boolean).join(' ');
   } else if (type === 'url') {
-    text = document.getElementById('urlInput').value.trim();
-    if (!text) return alert('Please paste a URL first.');
+    input_text = document.getElementById('urlInput').value.trim();
+    if (!input_text) return alert('Please paste a URL first.');
   }
 
-  const analysis = type === 'url' ? analyzeUrl(text) : analyzeText(text);
-  const verdict = getVerdict(analysis.score);
+  const token = localStorage.getItem('access_token');
+  if (!token) {
+    window.location.href = 'login.html';
+    return;
+  }
 
-  saveScan(text, type === 'url' ? 'Link' : type === 'email' ? 'Email' : 'Message', verdict.cls, analysis.score);
-  showResult(verdict, analysis.score, analysis.flags, type, text);
+  // Show a loading state on the scan button
+  const scanBtn = document.querySelector(`#tab-${type} .btn-primary`);
+  const originalLabel = scanBtn.textContent;
+  scanBtn.disabled = true;
+  scanBtn.textContent = 'Scanning…';
+
+  try {
+    const response = await fetch('http://127.0.0.1:5000/api/scan', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + token
+      },
+      body: JSON.stringify({ input_text, scan_type: type })
+    });
+
+    const data = await response.json();
+
+    if (response.status === 401) {
+      // Token expired or invalid — send back to login
+      localStorage.removeItem('access_token');
+      window.location.href = 'login.html';
+      return;
+    }
+
+    if (!response.ok) {
+      alert('Scan failed: ' + (data.error || 'Unknown error.'));
+      return;
+    }
+
+    const verdict = getVerdictDisplay(data.result);
+    showResult(verdict, data.risk_score, data.flags, data.ai_explanation, type);
+
+  } catch (err) {
+    alert('Could not reach the server. Make sure the backend is running.');
+  } finally {
+    scanBtn.disabled = false;
+    scanBtn.textContent = originalLabel;
+  }
 }
 
-function saveScan(input, type, result, score) {
-  const scans = JSON.parse(sessionStorage.getItem('scamshield_scans') || '[]');
-  scans.push({
-    input: input.length > 80 ? input.slice(0, 80) + '…' : input,
-    type,
-    result,
-    score,
-    date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-  });
-  sessionStorage.setItem('scamshield_scans', JSON.stringify(scans));
-}
-
-function showResult(verdict, score, flags, type, rawInput) {
+// ===== DISPLAY RESULT =====
+function showResult(verdict, score, flags, aiExplanation, type) {
   const panel = document.getElementById('resultPanel');
   document.getElementById('resultIcon').textContent = verdict.icon;
 
@@ -109,20 +111,32 @@ function showResult(verdict, score, flags, type, rawInput) {
   document.getElementById('scoreValue').textContent = score + ' / 100';
 
   const flagsEl = document.getElementById('resultFlags');
-  if (flags.length > 0) {
+  let flagsHtml = '';
+
+  // AI explanation first — if available
+  if (aiExplanation) {
+    flagsHtml += `<div class="flag-item"><span>🤖</span><span>${aiExplanation}</span></div>`;
+  }
+
+  // Detected flags below
+  if (flags && flags.length > 0) {
     const flagMessages = type === 'url'
       ? flags.map(f => `Suspicious URL pattern matched: <code>${f}</code>`)
       : flags.map(f => `Scam keyword detected: "<strong>${f}</strong>"`);
-
-    flagsEl.innerHTML = flagMessages.map(msg =>
+    flagsHtml += flagMessages.map(msg =>
       `<div class="flag-item"><span>🔴</span><span>${msg}</span></div>`
     ).join('');
-  } else {
-    flagsEl.innerHTML = `<div class="flag-item"><span>🟢</span><span>No specific red flags found in the content.</span></div>`;
+  } else if (!aiExplanation) {
+    flagsHtml = `<div class="flag-item"><span>🟢</span><span>No specific red flags found in the content.</span></div>`;
   }
 
+  flagsEl.innerHTML = flagsHtml;
+
   panel.style.display = 'flex';
-  panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  // Use setTimeout to ensure display change is painted before scrolling
+  setTimeout(() => {
+    panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }, 50);
 }
 
 function hideResult() {
@@ -143,4 +157,25 @@ function resetScan() {
 // Sidebar toggle
 document.getElementById('sidebarToggle')?.addEventListener('click', () => {
   document.getElementById('sidebar').classList.toggle('open');
+});
+
+// ===== WIRE UP BUTTONS via addEventListener (no onclick in HTML) =====
+document.getElementById('scanMessageBtn').addEventListener('click', (e) => {
+  e.preventDefault();
+  runScan('message');
+});
+
+document.getElementById('scanEmailBtn').addEventListener('click', (e) => {
+  e.preventDefault();
+  runScan('email');
+});
+
+document.getElementById('scanUrlBtn').addEventListener('click', (e) => {
+  e.preventDefault();
+  runScan('url');
+});
+
+document.getElementById('resetScanBtn').addEventListener('click', (e) => {
+  e.preventDefault();
+  resetScan();
 });

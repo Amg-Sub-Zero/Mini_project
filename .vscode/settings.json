@@ -1,2 +1,7 @@
 {
+  "liveServer.settings.ignoreFiles": [
+    "backend/**",
+    ".git/**",
+    ".vscode/**"
+  ]
 }

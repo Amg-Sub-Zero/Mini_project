@@ -1,26 +1,44 @@
 // auth.js handles session guard via inline script in <head> of each protected page
 
 // ===== LOAD USER INFO =====
+const raw  = sessionStorage.getItem('scamshield_user');
 const user = raw ? JSON.parse(raw) : null;
 
 if (user) {
   const firstName = user.name.split(' ')[0];
   const welcomeEl = document.getElementById('welcomeMsg');
   if (welcomeEl) welcomeEl.textContent = `Welcome back, ${firstName} 👋`;
-  // topbar is handled by auth.js loadUserSession()
 }
 
-// ===== LOAD SCAN HISTORY FROM SESSION STORAGE =====
-function getScanHistory() {
-  const history = sessionStorage.getItem('scamshield_scans');
-  return history ? JSON.parse(history) : [];
+// ===== FETCH SCANS FROM BACKEND =====
+async function loadDashboard() {
+  const token = localStorage.getItem('access_token');
+  if (!token) return;
+
+  try {
+    const response = await fetch('http://127.0.0.1:5000/api/scans', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+
+    if (!response.ok) return;
+
+    const data  = await response.json();
+    const scans = data.scans || [];
+
+    renderStats(scans);
+    renderRecentScans(scans);
+  } catch (err) {
+    // Backend unreachable — show empty state silently
+    renderStats([]);
+    renderRecentScans([]);
+  }
 }
 
 function renderStats(scans) {
-  const total      = scans.length;
-  const scamCount  = scans.filter(s => s.result === 'scam').length;
-  const safeCount  = scans.filter(s => s.result === 'safe').length;
-  const suspCount  = scans.filter(s => s.result === 'suspicious').length;
+  const total     = scans.length;
+  const scamCount = scans.filter(s => s.result === 'scam').length;
+  const safeCount = scans.filter(s => s.result === 'safe').length;
+  const suspCount = scans.filter(s => s.result === 'suspicious').length;
 
   document.getElementById('statTotal').textContent      = total;
   document.getElementById('statScam').textContent       = scamCount;
@@ -42,16 +60,23 @@ function renderRecentScans(scans) {
     return;
   }
 
-  // Show most recent 10
-  const recent = [...scans].reverse().slice(0, 10);
-  tbody.innerHTML = recent.map(scan => `
-    <tr>
-      <td title="${scan.input}">${scan.input}</td>
-      <td><span class="type-tag">${scan.type}</span></td>
-      <td><span class="badge-${scan.result}">${scan.result.charAt(0).toUpperCase() + scan.result.slice(1)}</span></td>
-      <td>${scan.date}</td>
-    </tr>
-  `).join('');
+  // Show most recent 10 — backend already returns newest first
+  const recent = scans.slice(0, 10);
+  tbody.innerHTML = recent.map(scan => {
+    const date = new Date(scan.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    const preview = scan.input_text.length > 80 ? scan.input_text.slice(0, 80) + '…' : scan.input_text;
+    return `
+      <tr>
+        <td title="${scan.input_text}">${preview}</td>
+        <td><span class="type-tag">${capitalize(scan.scan_type)}</span></td>
+        <td><span class="badge-${scan.result}">${capitalize(scan.result)}</span></td>
+        <td>${date}</td>
+      </tr>`;
+  }).join('');
+}
+
+function capitalize(str) {
+  return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
 // ===== SIDEBAR TOGGLE (mobile) =====
@@ -60,6 +85,4 @@ document.getElementById('sidebarToggle')?.addEventListener('click', () => {
 });
 
 // ===== INIT =====
-const scans = getScanHistory();
-renderStats(scans);
-renderRecentScans(scans);
+loadDashboard();
