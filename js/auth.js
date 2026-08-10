@@ -1,10 +1,49 @@
 // ===== LOGIN =====
-// (wired to backend — coming next step)
-document.getElementById('loginForm')?.addEventListener('submit', function (e) {
+document.getElementById('loginForm')?.addEventListener('submit', async function (e) {
   e.preventDefault();
-  const errorEl = document.getElementById('loginError');
-  errorEl.style.display = 'block';
-  errorEl.textContent = '❌ Login is not yet connected. Coming soon.';
+  const email     = document.getElementById('loginEmail').value.trim();
+  const password  = document.getElementById('loginPassword').value;
+  const errorEl   = document.getElementById('loginError');
+  const submitBtn = this.querySelector('button[type="submit"]');
+
+  errorEl.style.display = 'none';
+
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Signing in…';
+
+  try {
+    const response = await fetch('http://127.0.0.1:5000/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      // Store JWT for future authenticated API calls
+      localStorage.setItem('access_token', data.token);
+
+      // Store user info for topbar display and session guard
+      sessionStorage.setItem('scamshield_user', JSON.stringify({
+        name:  data.user.full_name,
+        email: data.user.email,
+        id:    data.user.id
+      }));
+
+      window.location.href = 'dashboard.html';
+    } else {
+      errorEl.textContent = '❌ ' + (data.error || 'Invalid email or password.');
+      errorEl.style.display = 'block';
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Login';
+    }
+  } catch (err) {
+    errorEl.textContent = '❌ Could not reach the server. Make sure the backend is running.';
+    errorEl.style.display = 'block';
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Login';
+  }
 });
 
 // ===== REGISTER =====
@@ -68,6 +107,7 @@ document.getElementById('registerForm')?.addEventListener('submit', async functi
 // ===== LOGOUT =====
 function logout() {
   sessionStorage.removeItem('scamshield_user');
+  localStorage.removeItem('access_token');
   window.location.href = 'index.html';
 }
 
