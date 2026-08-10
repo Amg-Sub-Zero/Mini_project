@@ -5,21 +5,62 @@ let allScans = [];
 // ===== FETCH SCANS FROM BACKEND =====
 async function loadHistory() {
   const token = localStorage.getItem('access_token');
-  if (!token) return;
+  if (!token) {
+    window.location.replace('login.html');
+    return;
+  }
+
+  showLoading();
 
   try {
     const response = await fetch('http://127.0.0.1:5000/api/scans', {
       headers: { 'Authorization': 'Bearer ' + token }
     });
 
-    if (!response.ok) return;
+    if (response.status === 401) {
+      localStorage.removeItem('access_token');
+      window.location.replace('login.html');
+      return;
+    }
+
+    if (!response.ok) {
+      showError('Failed to load scan history. Please try again.');
+      return;
+    }
 
     const data = await response.json();
     allScans   = data.scans || [];
     applyFilters();
+
   } catch (err) {
-    renderHistory([]);
+    showError('Could not reach the server. Make sure the backend is running.');
   }
+}
+
+// ===== LOADING STATE =====
+function showLoading() {
+  const tbody   = document.getElementById('historyBody');
+  const countEl = document.getElementById('historyCount');
+  tbody.innerHTML = `
+    <tr>
+      <td colspan="5" style="text-align:center; color:var(--text-muted); padding:2.5rem;">
+        ⏳ Loading your scan history…
+      </td>
+    </tr>`;
+  countEl.textContent = '';
+}
+
+// ===== ERROR STATE =====
+function showError(message) {
+  const tbody   = document.getElementById('historyBody');
+  const countEl = document.getElementById('historyCount');
+  tbody.innerHTML = `
+    <tr>
+      <td colspan="5" style="text-align:center; color:#f87171; padding:2.5rem;">
+        ❌ ${message}
+      </td>
+    </tr>`;
+  countEl.textContent = '';
 }
 
 // ===== RENDER TABLE =====
@@ -41,9 +82,12 @@ function renderHistory(scans) {
   tbody.innerHTML = scans.map(scan => {
     const date    = new Date(scan.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     const preview = scan.input_text.length > 80 ? scan.input_text.slice(0, 80) + '…' : scan.input_text;
+    // Escape HTML to prevent XSS from stored scan content
+    const safePreview = preview.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const safeTitle   = scan.input_text.replace(/"/g, '&quot;');
     return `
       <tr>
-        <td title="${scan.input_text}">${preview}</td>
+        <td title="${safeTitle}">${safePreview}</td>
         <td><span class="type-tag">${capitalize(scan.scan_type)}</span></td>
         <td><span class="badge-${scan.result}">${capitalize(scan.result)}</span></td>
         <td>
@@ -75,8 +119,8 @@ function applyFilters() {
 
   if (search) filtered = filtered.filter(s => s.input_text.toLowerCase().includes(search));
   if (result !== 'all') filtered = filtered.filter(s => s.result === result);
-  // Backend scan_type is lowercase: "message", "email", "url"
-  // History filter options are: "Message", "Email", "Link"
+  // Backend scan_type values: "message", "email", "url"
+  // Filter dropdown values:   "Message", "Email",   "Link"
   if (type !== 'all') {
     const typeMap = { 'Message': 'message', 'Email': 'email', 'Link': 'url' };
     filtered = filtered.filter(s => s.scan_type === typeMap[type]);
@@ -89,7 +133,7 @@ document.getElementById('searchInput').addEventListener('input', applyFilters);
 document.getElementById('filterResult').addEventListener('change', applyFilters);
 document.getElementById('filterType').addEventListener('change', applyFilters);
 
-// ===== CLEAR HISTORY — not supported via backend yet, just shows a message =====
+// ===== CLEAR HISTORY =====
 document.getElementById('clearBtn').addEventListener('click', () => {
   alert('Clear history will be available in a future update.');
 });
