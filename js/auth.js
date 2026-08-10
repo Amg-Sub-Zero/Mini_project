@@ -1,3 +1,9 @@
+// ===== API BASE URL =====
+// Uses the same host as the current page so it works on any device on the network
+const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  ? 'http://127.0.0.1:5000'
+  : `http://${window.location.hostname}:5000`;
+
 // ===== LOGIN =====
 document.getElementById('loginForm')?.addEventListener('submit', async function (e) {
   e.preventDefault();
@@ -12,7 +18,7 @@ document.getElementById('loginForm')?.addEventListener('submit', async function 
   submitBtn.textContent = 'Signing in…';
 
   try {
-    const response = await fetch('http://127.0.0.1:5000/api/login', {
+    const response = await fetch(`${API_BASE}/api/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password })
@@ -77,7 +83,7 @@ document.getElementById('registerForm')?.addEventListener('submit', async functi
   submitBtn.textContent = 'Creating account…';
 
   try {
-    const response = await fetch('http://127.0.0.1:5000/api/register', {
+    const response = await fetch(`${API_BASE}/api/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ full_name: name, email: email, password: password })

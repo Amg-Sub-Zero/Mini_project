@@ -16,7 +16,7 @@ async function loadDashboard() {
   if (!token) return;
 
   try {
-    const response = await fetch('http://127.0.0.1:5000/api/scans', {
+    const response = await fetch(`${API_BASE}/api/scans`, {
       headers: { 'Authorization': 'Bearer ' + token }
     });
 
