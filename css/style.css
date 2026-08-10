@@ -1,16 +1,73 @@
 /* ===== RESET & BASE ===== */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+/* ===== THEME — system light/dark via prefers-color-scheme ===== */
 :root {
+  color-scheme: light dark;
+
   --primary: #4f46e5;
   --primary-dark: #3730a3;
+  --primary-light: #6366f1;
   --accent: #06b6d4;
-  --bg: #0f172a;
-  --bg-card: #1e293b;
-  --text: #f1f5f9;
-  --text-muted: #94a3b8;
-  --border: #334155;
   --radius: 12px;
+
+  --danger: #ef4444;
+  --danger-light: #f87171;
+  --success: #22c55e;
+  --success-light: #4ade80;
+  --warning: #f59e0b;
+  --warning-light: #fbbf24;
+
+  /* Light mode (default) */
+  --bg: #f8fafc;
+  --bg-card: #ffffff;
+  --text: #0f172a;
+  --text-muted: #64748b;
+  --border: #e2e8f0;
+  --navbar-bg: rgba(255, 255, 255, 0.92);
+  --hero-gradient-start: #0f172a;
+  --hero-gradient-end: #4f46e5;
+  --badge-bg: rgba(79, 70, 229, 0.1);
+  --badge-color: #4f46e5;
+  --badge-border: rgba(79, 70, 229, 0.25);
+  --nav-active-bg: rgba(79, 70, 229, 0.1);
+  --tab-active-bg: rgba(79, 70, 229, 0.06);
+  --row-hover: rgba(0, 0, 0, 0.04);
+  --type-tag-bg: rgba(0, 0, 0, 0.05);
+  --shield-shadow: rgba(79, 70, 229, 0.25);
+  --link-accent: #4f46e5;
+  --danger-bg: rgba(239, 68, 68, 0.1);
+  --danger-border: rgba(239, 68, 68, 0.25);
+  --success-bg: rgba(34, 197, 94, 0.1);
+  --success-border: rgba(34, 197, 94, 0.25);
+  --warning-bg: rgba(245, 158, 11, 0.1);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f172a;
+    --bg-card: #1e293b;
+    --text: #f1f5f9;
+    --text-muted: #94a3b8;
+    --border: #334155;
+    --navbar-bg: rgba(15, 23, 42, 0.92);
+    --hero-gradient-start: #f1f5f9;
+    --hero-gradient-end: #818cf8;
+    --badge-bg: rgba(79, 70, 229, 0.15);
+    --badge-color: #818cf8;
+    --badge-border: rgba(79, 70, 229, 0.3);
+    --nav-active-bg: rgba(79, 70, 229, 0.15);
+    --tab-active-bg: rgba(79, 70, 229, 0.05);
+    --row-hover: rgba(255, 255, 255, 0.04);
+    --type-tag-bg: rgba(255, 255, 255, 0.06);
+    --shield-shadow: rgba(79, 70, 229, 0.4);
+    --link-accent: #818cf8;
+    --danger-bg: rgba(239, 68, 68, 0.15);
+    --danger-border: rgba(239, 68, 68, 0.3);
+    --success-bg: rgba(74, 222, 128, 0.15);
+    --success-border: rgba(74, 222, 128, 0.3);
+    --warning-bg: rgba(251, 191, 36, 0.15);
+  }
 }
 
 html { scroll-behavior: smooth; }
@@ -55,7 +112,7 @@ body {
   position: sticky;
   top: 0;
   z-index: 100;
-  background: rgba(15, 23, 42, 0.9);
+  background: var(--navbar-bg);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--border);
 }
@@ -120,9 +177,9 @@ body {
 
 .badge {
   display: inline-block;
-  background: rgba(79, 70, 229, 0.15);
-  color: #818cf8;
-  border: 1px solid rgba(79, 70, 229, 0.3);
+  background: var(--badge-bg);
+  color: var(--badge-color);
+  border: 1px solid var(--badge-border);
   padding: 0.3rem 0.9rem;
   border-radius: 20px;
   font-size: 0.85rem;
@@ -135,7 +192,7 @@ body {
   font-weight: 800;
   line-height: 1.15;
   margin-bottom: 1.25rem;
-  background: linear-gradient(135deg, #f1f5f9, #818cf8);
+  background: linear-gradient(135deg, var(--hero-gradient-start), var(--hero-gradient-end));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -158,7 +215,7 @@ body {
 .shield-icon {
   font-size: 10rem;
   animation: float 3s ease-in-out infinite;
-  filter: drop-shadow(0 0 40px rgba(79, 70, 229, 0.4));
+  filter: drop-shadow(0 0 40px var(--shield-shadow));
 }
 
 @keyframes float {
