@@ -49,8 +49,8 @@ document.getElementById('registerForm')?.addEventListener('submit', function (e)
     return;
   }
 
-  if (password.length < 3) {
-    errorEl.textContent = '❌ Password must be at least 3 characters.';
+  if (password.length < 5) {
+    errorEl.textContent = '❌ Password must be at least 5 characters.';
     errorEl.style.display = 'block';
     return;
   }

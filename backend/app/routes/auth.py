@@ -17,8 +17,8 @@ def register():
     email     = data["email"].strip().lower()
     password  = data["password"]
 
-    if len(password) < 6:
-        return jsonify({"error": "Password must be at least 6 characters"}), 400
+    if len(password) < 5:
+        return jsonify({"error": "Password must be at least 5 characters"}), 400
 
     if User.query.filter_by(email=email).first():
         return jsonify({"error": "An account with this email already exists"}), 409
