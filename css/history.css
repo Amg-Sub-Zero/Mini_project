@@ -18,7 +18,7 @@
 
 .filter-input {
   flex: 1;
-  min-width: 180px;
+  min-width: 0;
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: 8px;

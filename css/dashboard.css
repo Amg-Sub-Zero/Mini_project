@@ -309,4 +309,14 @@
   .stat-card-number { font-size: 1.5rem; }
   .scans-table th,
   .scans-table td { padding: 0.75rem 0.75rem; }
+
+  /* Force stats into 2 columns on small phones */
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+
+  /* Tighten table columns so they fit without horizontal scroll */
+  .scans-table td { max-width: 120px; }
+
+  /* Hide the Date column on very small screens to save space */
+  .scans-table th:last-child,
+  .scans-table td:last-child { display: none; }
 }
