@@ -1,6 +1,4 @@
-// ===== SESSION GUARD =====
-const raw = sessionStorage.getItem('scamshield_user');
-if (!raw) window.location.href = 'index.html';
+// auth.js handles session guard via inline script in <head> of each protected page
 
 const user  = JSON.parse(raw);
 const scans = JSON.parse(sessionStorage.getItem('scamshield_scans') || '[]');

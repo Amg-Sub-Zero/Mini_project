@@ -1,9 +1,4 @@
-// ===== SESSION GUARD =====
-if (!sessionStorage.getItem('scamshield_user')) {
-  window.location.href = 'index.html';
-}
-
-// auth.js handles topbar display via loadUserSession()
+// auth.js handles session guard via inline script in <head> of each protected page
 
 // ===== TAB SWITCHING =====
 document.querySelectorAll('.tab').forEach(tab => {

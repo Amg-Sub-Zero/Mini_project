@@ -1,8 +1,4 @@
-// ===== SESSION GUARD — redirect to landing if not logged in =====
-const raw = sessionStorage.getItem('scamshield_user');
-if (!raw) {
-  window.location.href = 'index.html';
-}
+// auth.js handles session guard via inline script in <head> of each protected page
 
 // ===== LOAD USER INFO =====
 const user = raw ? JSON.parse(raw) : null;

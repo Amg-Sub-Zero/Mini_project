@@ -47,9 +47,8 @@ document.getElementById('registerForm')?.addEventListener('submit', async functi
     const data = await response.json();
 
     if (response.ok) {
-      // Success — hide the form and show the confirmation
-      this.style.display = 'none';
-      successEl.style.display = 'block';
+      // Redirect to login with a success flag — more reliable than in-page state
+      window.location.href = 'login.html?registered=1';
     } else {
       // Server returned a validation or conflict error
       errorEl.textContent = '❌ ' + (data.error || 'Registration failed. Please try again.');
@@ -102,5 +101,11 @@ function togglePassword(inputId, btn) {
 
 // ===== CLEANUP — remove legacy localStorage user store if present =====
 localStorage.removeItem('scamshield_users');
+
+// ===== SHOW SUCCESS BANNER ON LOGIN PAGE after registration redirect =====
+if (new URLSearchParams(window.location.search).get('registered') === '1') {
+  const banner = document.getElementById('registerSuccess');
+  if (banner) banner.style.display = 'block';
+}
 
 loadUserSession();

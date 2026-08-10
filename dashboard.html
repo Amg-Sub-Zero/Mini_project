@@ -6,6 +6,12 @@
   <title>Dashboard - ScamShield</title>
   <link rel="stylesheet" href="css/style.css" />
   <link rel="stylesheet" href="css/dashboard.css" />
+  <script>
+    // Guard runs before paint — no session means instant redirect, no flash
+    if (!sessionStorage.getItem('scamshield_user')) {
+      window.location.replace('index.html');
+    }
+  </script>
 </head>
 <body class="dashboard-body">
 

@@ -1,7 +1,4 @@
-// ===== SESSION GUARD =====
-if (!sessionStorage.getItem('scamshield_user')) {
-  window.location.href = 'index.html';
-}
+// auth.js handles session guard via inline script in <head> of each protected page
 
 // ===== LOAD DATA =====
 function getScans() {
