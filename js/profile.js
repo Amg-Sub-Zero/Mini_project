@@ -88,10 +88,5 @@ async function loadProfile() {
   }
 }
 
-// ===== SIDEBAR TOGGLE =====
-document.getElementById('sidebarToggle')?.addEventListener('click', () => {
-  document.getElementById('sidebar').classList.toggle('open');
-});
-
 // ===== INIT =====
 loadProfile();

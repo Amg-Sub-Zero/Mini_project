@@ -138,10 +138,5 @@ document.getElementById('clearBtn').addEventListener('click', () => {
   alert('Clear history will be available in a future update.');
 });
 
-// ===== SIDEBAR TOGGLE =====
-document.getElementById('sidebarToggle')?.addEventListener('click', () => {
-  document.getElementById('sidebar').classList.toggle('open');
-});
-
 // ===== INIT =====
 loadHistory();

@@ -154,11 +154,6 @@ function resetScan() {
   document.getElementById('emailCount').textContent = '0 characters';
 }
 
-// Sidebar toggle
-document.getElementById('sidebarToggle')?.addEventListener('click', () => {
-  document.getElementById('sidebar').classList.toggle('open');
-});
-
 // ===== WIRE UP BUTTONS via addEventListener (no onclick in HTML) =====
 document.getElementById('scanMessageBtn').addEventListener('click', (e) => {
   e.preventDefault();

@@ -79,10 +79,5 @@ function capitalize(str) {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-// ===== SIDEBAR TOGGLE (mobile) =====
-document.getElementById('sidebarToggle')?.addEventListener('click', () => {
-  document.getElementById('sidebar').classList.toggle('open');
-});
-
 // ===== INIT =====
 loadDashboard();

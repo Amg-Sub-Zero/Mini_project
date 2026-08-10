@@ -94,3 +94,10 @@
   text-align: right;
   word-break: break-all;
 }
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 600px) {
+  .profile-card { padding: 1.5rem 1rem; }
+  .profile-field { flex-direction: column; align-items: flex-start; gap: 0.25rem; }
+  .profile-field-value { text-align: left; }
+}

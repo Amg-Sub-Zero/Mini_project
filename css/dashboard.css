@@ -282,3 +282,31 @@
   .sidebar-toggle { display: block; }
   .dashboard-main { padding: 1.25rem 1rem; }
 }
+
+/* ===== SIDEBAR BACKDROP (mobile) ===== */
+.sidebar-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 199;
+}
+
+.sidebar-backdrop.open { display: block; }
+
+/* ===== TABLET (769px – 1024px) ===== */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .sidebar { width: 200px; }
+  .main-wrapper { margin-left: 200px; }
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ===== SMALL PHONE (max 480px) ===== */
+@media (max-width: 480px) {
+  .dashboard-main { padding: 1rem 0.75rem; gap: 1.25rem; }
+  .welcome-section h1 { font-size: 1.4rem; }
+  .stat-card { padding: 1rem; }
+  .stat-card-number { font-size: 1.5rem; }
+  .scans-table th,
+  .scans-table td { padding: 0.75rem 0.75rem; }
+}

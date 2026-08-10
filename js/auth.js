@@ -127,6 +127,36 @@ function loadUserSession() {
   topbarEl.innerHTML = `${avatarHtml}<span class="topbar-name">${user.name}</span>`;
 }
 
+// ===== SIDEBAR TOGGLE WITH BACKDROP =====
+// Called from each page's sidebarToggle button
+function initSidebar() {
+  const toggleBtn = document.getElementById('sidebarToggle');
+  const sidebar   = document.getElementById('sidebar');
+  const backdrop  = document.getElementById('sidebarBackdrop');
+  if (!toggleBtn || !sidebar) return;
+
+  function openSidebar() {
+    sidebar.classList.add('open');
+    if (backdrop) backdrop.classList.add('open');
+  }
+
+  function closeSidebar() {
+    sidebar.classList.remove('open');
+    if (backdrop) backdrop.classList.remove('open');
+  }
+
+  toggleBtn.addEventListener('click', () => {
+    sidebar.classList.contains('open') ? closeSidebar() : openSidebar();
+  });
+
+  if (backdrop) backdrop.addEventListener('click', closeSidebar);
+
+  // Close sidebar when a nav link is clicked on mobile
+  sidebar.querySelectorAll('.nav-item').forEach(item => {
+    item.addEventListener('click', closeSidebar);
+  });
+}
+
 // ===== TOGGLE PASSWORD VISIBILITY =====
 function togglePassword(inputId, btn) {
   const input = document.getElementById(inputId);
@@ -149,3 +179,4 @@ if (new URLSearchParams(window.location.search).get('registered') === '1') {
 }
 
 loadUserSession();
+initSidebar();
