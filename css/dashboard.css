@@ -89,9 +89,10 @@
   cursor: pointer;
 }
 
-.topbar-user {
-  color: var(--text-muted);
-  font-size: 0.95rem;
+.topbar-right {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
 }
 
 .topbar-avatar {
@@ -99,6 +100,7 @@
   align-items: center;
   gap: 0.6rem;
   cursor: pointer;
+  text-decoration: none;
 }
 
 .topbar-avatar img,
