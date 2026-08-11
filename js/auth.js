@@ -38,6 +38,12 @@ document.getElementById('loginForm')?.addEventListener('submit', async function 
       }));
 
       window.location.href = 'dashboard.html';
+    } else if (response.status === 403) {
+      // Account not verified
+      errorEl.textContent = '❌ ' + data.error;
+      errorEl.style.display = 'block';
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Login';
     } else {
       errorEl.textContent = '❌ ' + (data.error || 'Invalid email or password.');
       errorEl.style.display = 'block';
@@ -92,7 +98,7 @@ document.getElementById('registerForm')?.addEventListener('submit', async functi
     const data = await response.json();
 
     if (response.ok) {
-      // Redirect to login with a success flag — more reliable than in-page state
+      // Redirect to login with a check-email flag
       window.location.href = 'login.html?registered=1';
     } else {
       // Server returned a validation or conflict error
@@ -179,9 +185,31 @@ function togglePassword(inputId, btn) {
 localStorage.removeItem('scamshield_users');
 
 // ===== SHOW SUCCESS BANNER ON LOGIN PAGE after registration redirect =====
-if (new URLSearchParams(window.location.search).get('registered') === '1') {
+const urlParams = new URLSearchParams(window.location.search);
+if (urlParams.get('registered') === '1') {
   const banner = document.getElementById('registerSuccess');
   if (banner) banner.style.display = 'block';
+}
+if (urlParams.get('verify') === 'success') {
+  const banner = document.getElementById('registerSuccess');
+  if (banner) {
+    banner.textContent = '✅ Email verified! You can now log in.';
+    banner.style.display = 'block';
+  }
+}
+if (urlParams.get('verify') === 'already') {
+  const banner = document.getElementById('registerSuccess');
+  if (banner) {
+    banner.textContent = '✅ Email already verified. Please log in.';
+    banner.style.display = 'block';
+  }
+}
+if (urlParams.get('verify') === 'invalid') {
+  const errorEl = document.getElementById('loginError');
+  if (errorEl) {
+    errorEl.textContent = '❌ Invalid or expired verification link. Please register again.';
+    errorEl.style.display = 'block';
+  }
 }
 
 loadUserSession();

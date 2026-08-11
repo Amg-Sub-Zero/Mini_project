@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Verify Email — ScamShield</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/auth.css" />
+</head>
+<body class="auth-body">
+
+  <div class="auth-card" style="text-align:center;">
+    <a href="index.html" class="auth-logo">🛡️ ScamShield</a>
+
+    <div id="verifyState">
+      <p class="auth-sub" style="margin-bottom:0;">⏳ Verifying your email...</p>
+    </div>
+  </div>
+
+  <script src="js/auth.js"></script>
+  <script>
+    const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+      ? 'http://127.0.0.1:5000'
+      : `http://${window.location.hostname}:5000`;
+
+    async function verifyToken() {
+      const token     = new URLSearchParams(window.location.search).get('token');
+      const stateEl   = document.getElementById('verifyState');
+
+      if (!token) {
+        stateEl.innerHTML = `
+          <div class="auth-error" style="display:block;">❌ Invalid verification link.</div>
+          <p style="margin-top:1rem;"><a href="register.html" style="color:#818cf8;">Register again</a></p>`;
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_BASE}/api/verify/${token}`);
+        const data     = await response.json();
+
+        if (response.ok) {
+          stateEl.innerHTML = `
+            <div class="auth-success" style="display:block;">
+              ✅ ${data.message}
+            </div>
+            <a href="login.html" class="btn btn-primary btn-full" style="margin-top:1.25rem; display:block;">
+              Go to Login
+            </a>`;
+        } else {
+          stateEl.innerHTML = `
+            <div class="auth-error" style="display:block;">❌ ${data.error || 'Verification failed.'}</div>
+            <p style="margin-top:1rem;"><a href="register.html" style="color:#818cf8;">Register again</a></p>`;
+        }
+      } catch (err) {
+        stateEl.innerHTML = `
+          <div class="auth-error" style="display:block;">❌ Could not reach the server. Make sure the backend is running.</div>`;
+      }
+    }
+
+    verifyToken();
+  </script>
+</body>
+</html>
