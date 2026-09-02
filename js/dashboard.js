@@ -65,9 +65,11 @@ function renderRecentScans(scans) {
   tbody.innerHTML = recent.map(scan => {
     const date = new Date(scan.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     const preview = scan.input_text.length > 80 ? scan.input_text.slice(0, 80) + '…' : scan.input_text;
+    const safePreview = escapeHtml(preview);
+    const safeTitle   = escapeHtml(scan.input_text);
     return `
       <tr>
-        <td title="${scan.input_text}">${preview}</td>
+        <td title="${safeTitle}">${safePreview}</td>
         <td><span class="type-tag">${capitalize(scan.scan_type)}</span></td>
         <td><span class="badge-${scan.result}">${capitalize(scan.result)}</span></td>
         <td>${date}</td>

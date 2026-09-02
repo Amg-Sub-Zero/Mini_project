@@ -1,3 +1,15 @@
+// ===== SHARED UTILITY: HTML ESCAPING =====
+// Escapes user-controlled strings before injecting into innerHTML.
+// Used by dashboard.js, detector.js, and history.js.
+function escapeHtml(str) {
+  if (str == null) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
 // Mobile nav toggle
 const hamburger = document.getElementById('hamburger');
 const navLinks = document.querySelector('.nav-links');

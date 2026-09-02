@@ -82,9 +82,8 @@ function renderHistory(scans) {
   tbody.innerHTML = scans.map(scan => {
     const date    = new Date(scan.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     const preview = scan.input_text.length > 80 ? scan.input_text.slice(0, 80) + '…' : scan.input_text;
-    // Escape HTML to prevent XSS from stored scan content
-    const safePreview = preview.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    const safeTitle   = scan.input_text.replace(/"/g, '&quot;');
+    const safePreview = escapeHtml(preview);
+    const safeTitle   = escapeHtml(scan.input_text);
     return `
       <tr>
         <td title="${safeTitle}">${safePreview}</td>

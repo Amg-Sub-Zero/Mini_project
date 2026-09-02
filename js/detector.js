@@ -115,14 +115,14 @@ function showResult(verdict, score, flags, aiExplanation, type) {
 
   // AI explanation first — if available
   if (aiExplanation) {
-    flagsHtml += `<div class="flag-item"><span>🤖</span><span>${aiExplanation}</span></div>`;
+    flagsHtml += `<div class="flag-item"><span>🤖</span><span>${escapeHtml(aiExplanation)}</span></div>`;
   }
 
   // Detected flags below
   if (flags && flags.length > 0) {
     const flagMessages = type === 'url'
-      ? flags.map(f => `Suspicious URL pattern matched: <code>${f}</code>`)
-      : flags.map(f => `Scam keyword detected: "<strong>${f}</strong>"`);
+      ? flags.map(f => `Suspicious URL pattern matched: <code>${escapeHtml(f)}</code>`)
+      : flags.map(f => `Scam keyword detected: "<strong>${escapeHtml(f)}</strong>"`);
     flagsHtml += flagMessages.map(msg =>
       `<div class="flag-item"><span>🔴</span><span>${msg}</span></div>`
     ).join('');
