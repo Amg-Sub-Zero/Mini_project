@@ -103,6 +103,9 @@ DEBUG=true
 # Gmail SMTP — for email verification
 MAIL_USERNAME=your-gmail@gmail.com
 MAIL_PASSWORD=your-gmail-app-password
+
+# CORS — comma-separated list of allowed frontend origins
+FRONTEND_ORIGIN=http://127.0.0.1:5500,http://localhost:5500
 ```
 
 - Get a free Gemini API key at [https://aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey)
