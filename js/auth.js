@@ -124,13 +124,45 @@ function logout() {
 }
 
 // ===== TOPBAR USER DISPLAY =====
-function loadUserSession() {
-  const raw = sessionStorage.getItem('scamshield_user');
-  if (!raw) return;
-  const user = JSON.parse(raw);
+async function loadUserSession() {
   const topbarEl = document.getElementById('topbarUser');
   if (!topbarEl) return;
 
+  let raw = sessionStorage.getItem('scamshield_user');
+
+  // sessionStorage cleared (new tab / browser restart) but token still valid —
+  // rebuild the cached user from the profile endpoint
+  if (!raw) {
+    const token = localStorage.getItem('access_token');
+    if (!token) return;
+
+    try {
+      const res = await fetch(`${API_BASE}/api/profile`, {
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+
+      if (!res.ok) {
+        // Token expired or invalid — clear and send to login
+        localStorage.removeItem('access_token');
+        window.location.replace('login.html');
+        return;
+      }
+
+      const data = await res.json();
+      const u    = data.user;
+      sessionStorage.setItem('scamshield_user', JSON.stringify({
+        name:  u.full_name,
+        email: u.email,
+        id:    u.id
+      }));
+      raw = sessionStorage.getItem('scamshield_user');
+    } catch (err) {
+      // Network error — don't redirect, just leave topbar empty
+      return;
+    }
+  }
+
+  const user = JSON.parse(raw);
   const savedPhoto = localStorage.getItem('scamshield_avatar_' + user.email);
   const avatarHtml = savedPhoto
     ? `<img src="${savedPhoto}" alt="Profile photo" />`

@@ -9,8 +9,8 @@
   <link rel="stylesheet" href="css/dashboard.css" />
   <link rel="stylesheet" href="css/profile.css" />
   <script>
-    if (!sessionStorage.getItem('scamshield_user')) {
-      window.location.replace('index.html');
+    if (!localStorage.getItem('access_token')) {
+      window.location.replace('login.html');
     }
   </script>
 </head>
