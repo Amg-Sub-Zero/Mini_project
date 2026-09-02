@@ -243,6 +243,13 @@ if (urlParams.get('verify') === 'invalid') {
     errorEl.style.display = 'block';
   }
 }
+if (urlParams.get('verify') === 'expired') {
+  const errorEl = document.getElementById('loginError');
+  if (errorEl) {
+    errorEl.textContent = '❌ Verification link expired. Please register again.';
+    errorEl.style.display = 'block';
+  }
+}
 
 loadUserSession();
 initSidebar();

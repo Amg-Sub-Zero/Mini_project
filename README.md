@@ -131,6 +131,9 @@ Open `index.html` with VS Code Live Server or any local HTTP server. Do not open
 2. Backend creates the account (unverified) and sends a verification email
 3. User clicks the link in the email — the backend verifies the token and redirects to the login page
 4. User logs in — login is blocked until the email is verified
+5. Verification links expire after **20 minutes**. If a link has expired, the user is redirected to the login page with an "expired" message and must register again.
+
+> **Database note:** The `users` table gained a new nullable column `verification_token_created_at` in this version. If you have an existing `scamshield.db`, Flask-SQLAlchemy will add the column automatically on next startup (SQLite `ALTER TABLE` via `db.create_all()` does not drop existing data). Rows created before this change will have `NULL` in that column and are treated as non-expired.
 
 ---
 

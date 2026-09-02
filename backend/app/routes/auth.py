@@ -59,8 +59,15 @@ def verify_email(token):
     if user.is_verified:
         return redirect(f"{frontend_url}/login.html?verify=already")
 
-    user.is_verified        = True
-    user.verification_token = None
+    if user.is_verification_token_expired():
+        user.verification_token            = None
+        user.verification_token_created_at = None
+        db.session.commit()
+        return redirect(f"{frontend_url}/login.html?verify=expired")
+
+    user.is_verified                   = True
+    user.verification_token            = None
+    user.verification_token_created_at = None
     db.session.commit()
 
     return redirect(f"{frontend_url}/login.html?verify=success")

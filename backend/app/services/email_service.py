@@ -42,7 +42,7 @@ def send_verification_email(to_email: str, full_name: str, token: str, base_url:
       </a>
       <p style="color: #94a3b8; font-size: 0.85rem; margin-top: 24px;">
         If you didn't create a ScamShield account, you can safely ignore this email.<br/>
-        This link expires after 24 hours.
+        This link expires in 20 minutes.
       </p>
     </div>
     """
