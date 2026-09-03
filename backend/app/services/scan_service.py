@@ -1,10 +1,17 @@
 import re
 
 SCAM_KEYWORDS = [
+    # Original keywords
     "won", "winner", "claim", "prize", "reward", "gift card", "lottery",
     "urgent", "verify", "suspended", "confirm your account", "bank details",
     "click here", "free money", "congratulations", "OTP", "password",
-    "transfer funds", "inheritance", "investment opportunity", "act now"
+    "transfer funds", "inheritance", "investment opportunity", "act now",
+    # Added keywords
+    "momo pin", "reversal", "cash out code", "confirm otp",
+    "accidental transfer", "gcb alert", "ecobank alert",
+    "account suspended", "verify your account", "click to unlock",
+    "send money for ticket", "processing fee",
+    "guaranteed job abroad", "pay to secure position", "urgent transfer"
 ]
 
 SUSPICIOUS_URL_PATTERNS = [
