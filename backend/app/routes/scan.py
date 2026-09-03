@@ -3,7 +3,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from app import db
 from app.models.scan import Scan
 from app.services.scan_service import analyze, get_verdict
-from app.services.gemini_service import get_ai_explanation
+from app.services.groq_service import get_ai_explanation
 
 scan_bp = Blueprint("scan", __name__, url_prefix="/api")
 
