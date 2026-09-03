@@ -18,3 +18,7 @@ env/
 # IDE
 .vscode/
 .idea/
+
+# Firebase service account key — contains private credentials, never commit
+backend/serviceAccountKey.json
+serviceAccountKey.json
