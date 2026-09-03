@@ -83,7 +83,7 @@ async function runScan(type) {
     }
 
     const verdict = getVerdictDisplay(data.result);
-    showResult(verdict, data.risk_score, data.flags, data.ai_explanation, type);
+    showResult(verdict, data.risk_score, data.flags, data.ai_reason, data.ai_available, data.rule_result, data.ai_verdict, type);
 
   } catch (err) {
     alert('Could not reach the server. Make sure the backend is running.');
@@ -94,7 +94,7 @@ async function runScan(type) {
 }
 
 // ===== DISPLAY RESULT =====
-function showResult(verdict, score, flags, aiExplanation, type) {
+function showResult(verdict, score, flags, aiReason, aiAvailable, ruleResult, aiVerdict, type) {
   const panel = document.getElementById('resultPanel');
   document.getElementById('resultIcon').textContent = verdict.icon;
 
@@ -113,12 +113,13 @@ function showResult(verdict, score, flags, aiExplanation, type) {
   const flagsEl = document.getElementById('resultFlags');
   let flagsHtml = '';
 
-  // AI explanation first — if available
-  if (aiExplanation) {
-    flagsHtml += `<div class="flag-item"><span>🤖</span><span>${escapeHtml(aiExplanation)}</span></div>`;
+  // ── AI reason ──
+  if (aiReason) {
+    const icon = aiAvailable ? '🤖' : '⚠️';
+    flagsHtml += `<div class="flag-item"><span>${icon}</span><span>${escapeHtml(aiReason)}</span></div>`;
   }
 
-  // Detected flags below
+  // ── Rule-based flags ──
   if (flags && flags.length > 0) {
     const flagMessages = type === 'url'
       ? flags.map(f => `Suspicious URL pattern matched: <code>${escapeHtml(f)}</code>`)
@@ -126,14 +127,37 @@ function showResult(verdict, score, flags, aiExplanation, type) {
     flagsHtml += flagMessages.map(msg =>
       `<div class="flag-item"><span>🔴</span><span>${msg}</span></div>`
     ).join('');
-  } else if (!aiExplanation) {
+  } else if (!aiReason) {
     flagsHtml = `<div class="flag-item"><span>🟢</span><span>No specific red flags found in the content.</span></div>`;
   }
 
   flagsEl.innerHTML = flagsHtml;
 
+  // ── Dual verdict comparison card ──
+  const compEl = document.getElementById('verdictComparison');
+  if (compEl) {
+    const aiV     = aiAvailable && aiVerdict ? aiVerdict : null;
+    const ruleV   = ruleResult || 'safe';
+    const aiDisp  = getVerdictDisplay(aiV || ruleV);
+    const ruleDisp = getVerdictDisplay(ruleV);
+
+    compEl.innerHTML = `
+      <div class="comparison-card">
+        <div class="comparison-item">
+          <span class="comparison-label">🤖 AI Analysis</span>
+          <span class="comparison-badge ${aiV ? aiV : 'unavailable'}">
+            ${aiV ? aiDisp.label : 'Unavailable'}
+          </span>
+        </div>
+        <div class="comparison-divider"></div>
+        <div class="comparison-item">
+          <span class="comparison-label">📋 Rule-based</span>
+          <span class="comparison-badge ${ruleV}">${ruleDisp.label}</span>
+        </div>
+      </div>`;
+  }
+
   panel.style.display = 'flex';
-  // Use setTimeout to ensure display change is painted before scrolling
   setTimeout(() => {
     panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }, 50);

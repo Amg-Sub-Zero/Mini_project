@@ -3,9 +3,10 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from app import db
 from app.models.scan import Scan
 from app.services.scan_service import analyze, get_verdict
-from app.services.groq_service import get_ai_explanation
+from app.services.groq_service import get_ai_analysis
 
 scan_bp = Blueprint("scan", __name__, url_prefix="/api")
+
 
 @scan_bp.route("/scan", methods=["POST"])
 @jwt_required()
@@ -21,33 +22,47 @@ def run_scan():
     if scan_type not in ("message", "email", "url"):
         return jsonify({"error": "scan_type must be message, email, or url"}), 400
 
+    user_id = int(get_jwt_identity())
+
     # Step 1: Rule-based detection
-    user_id  = int(get_jwt_identity())
-    analysis = analyze(input_text, scan_type)
-    result   = get_verdict(analysis["score"])
+    analysis     = analyze(input_text, scan_type)
+    rule_result  = get_verdict(analysis["score"])
+    rule_score   = analysis["score"]
+    rule_flags   = analysis["flags"]
 
-    # Step 2: Gemini AI explanation
-    ai_explanation = get_ai_explanation(input_text, scan_type, result, analysis["score"], analysis["flags"])
+    # Step 2: AI independent analysis (Groq)
+    ai = get_ai_analysis(input_text, scan_type, rule_result, rule_flags)
 
-    # Step 3: Save to database
+    # Step 3: Final verdict — AI takes priority when available
+    final_result = ai["verdict"] if ai["available"] else rule_result
+
+    # Step 4: Save to database
     scan = Scan(
-        user_id        = user_id,
-        input_text     = input_text,
-        scan_type      = scan_type,
-        result         = result,
-        risk_score     = analysis["score"],
-        flags          = ",".join(analysis["flags"]),
-        ai_explanation = ai_explanation
+        user_id       = user_id,
+        input_text    = input_text,
+        scan_type     = scan_type,
+        result        = final_result,
+        risk_score    = rule_score,
+        flags         = ",".join(rule_flags),
+        ai_verdict    = ai["verdict"],
+        ai_reason     = ai["reason"],
+        ai_available  = ai["available"]
     )
     db.session.add(scan)
     db.session.commit()
 
     return jsonify({
-        "result":         result,
-        "risk_score":     analysis["score"],
-        "flags":          analysis["flags"],
-        "ai_explanation": ai_explanation,
-        "scan":           scan.to_dict()
+        # Final (AI-preferred) verdict — drives the main result panel
+        "result":        final_result,
+        # Rule-based details
+        "rule_result":   rule_result,
+        "risk_score":    rule_score,
+        "flags":         rule_flags,
+        # AI details
+        "ai_verdict":    ai["verdict"],
+        "ai_reason":     ai["reason"],
+        "ai_available":  ai["available"],
+        "scan":          scan.to_dict()
     }), 200
 
 

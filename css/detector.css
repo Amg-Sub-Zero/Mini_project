@@ -180,6 +180,52 @@
 
 .flag-item span:first-child { font-size: 1rem; margin-top: 1px; }
 
+/* ===== VERDICT COMPARISON CARD ===== */
+.comparison-card {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.comparison-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem;
+}
+
+.comparison-divider {
+  width: 1px;
+  align-self: stretch;
+  background: var(--border);
+}
+
+.comparison-label {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.comparison-badge {
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 0.3rem 0.85rem;
+  border-radius: 20px;
+}
+
+.comparison-badge.scam       { background: rgba(248,113,113,0.15); color: #f87171; }
+.comparison-badge.suspicious { background: rgba(251,191,36,0.15);  color: #fbbf24; }
+.comparison-badge.safe       { background: rgba(74,222,128,0.15);  color: #4ade80; }
+.comparison-badge.unavailable { background: var(--bg-card); color: var(--text-muted); }
+
 /* ===== RESPONSIVE ===== */
 @media (max-width: 600px) {
   .tabs { flex-direction: column; }
