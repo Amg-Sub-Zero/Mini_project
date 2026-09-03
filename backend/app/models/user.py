@@ -34,7 +34,7 @@ class User(db.Model):
         # Make offset-aware if stored as naive UTC
         if created.tzinfo is None:
             created = created.replace(tzinfo=timezone.utc)
-        return datetime.now(timezone.utc) - created > timedelta(minutes=20)
+        return datetime.now(timezone.utc) - created > timedelta(minutes=5)
 
     def to_dict(self):
         return {
