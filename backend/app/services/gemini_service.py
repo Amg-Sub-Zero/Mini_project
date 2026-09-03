@@ -1,10 +1,10 @@
 import os
 from pathlib import Path
 from dotenv import load_dotenv
-from google import genai
-from google.genai import errors as genai_errors
+from openai import OpenAI, APIError
 
 load_dotenv(Path(__file__).resolve().parents[2] / ".env")
+
 
 def _fallback_explanation(rule_result: str, flags: list) -> str:
     flag_str = ", ".join(flags[:3]) if flags else "suspicious patterns"
@@ -26,11 +26,12 @@ def _fallback_explanation(rule_result: str, flags: list) -> str:
         "Always stay cautious with unsolicited messages."
     )
 
+
 def get_ai_explanation(input_text: str, scan_type: str, rule_result: str, risk_score: int, flags: list = None) -> str:
     if flags is None:
         flags = []
 
-    api_key = os.getenv("GOOGLE_API_KEY", "").strip()
+    api_key = os.getenv("GROQ_API_KEY", "").strip()
     if not api_key:
         return _fallback_explanation(rule_result, flags)
 
@@ -47,16 +48,19 @@ Provide a clear, concise explanation (2-3 sentences) of why this content is or i
 Be specific. Write in plain English for a non-technical user.
 """
     try:
-        client = genai.Client(api_key=api_key)
-        response = client.models.generate_content(
-            model="gemini-2.0-flash-lite",
-            contents=prompt
+        client = OpenAI(
+            api_key=api_key,
+            base_url="https://api.groq.com/openai/v1"
         )
-        text = (response.text or "").strip()
+        response = client.chat.completions.create(
+            model="groq/compound-mini",
+            messages=[{"role": "user", "content": prompt}]
+        )
+        text = (response.choices[0].message.content or "").strip()
         if not text:
             return _fallback_explanation(rule_result, flags)
         return text
-    except (genai_errors.APIError, AttributeError, ValueError):
+    except (APIError, AttributeError, ValueError):
         return _fallback_explanation(rule_result, flags)
     except Exception:
         return _fallback_explanation(rule_result, flags)

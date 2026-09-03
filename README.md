@@ -26,7 +26,7 @@ A full-stack web application that helps users identify online scams by analyzing
 | Frontend | HTML5, CSS3, Vanilla JavaScript |
 | Backend | Python, Flask, Flask-JWT-Extended |
 | Database | SQLite via Flask-SQLAlchemy |
-| AI | Google Gemini API (`gemini-2.0-flash-lite`) |
+| AI | Groq API (`groq/compound-mini`) |
 | Auth | JWT (JSON Web Tokens) |
 | Email | Gmail SMTP via Python `smtplib` |
 
@@ -106,6 +106,9 @@ MAIL_PASSWORD=your-gmail-app-password
 
 # CORS — comma-separated list of allowed frontend origins
 FRONTEND_ORIGIN=http://127.0.0.1:5500,http://localhost:5500
+
+# Groq AI — free tier, get your key at https://console.groq.com
+GROQ_API_KEY=your-groq-api-key
 ```
 
 - Get a free Gemini API key at [https://aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey)
