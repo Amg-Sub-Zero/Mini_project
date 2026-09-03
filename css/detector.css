@@ -180,6 +180,13 @@
 
 .flag-item span:first-child { font-size: 1rem; margin-top: 1px; }
 
+/* ===== RESULT ACTIONS ROW ===== */
+.result-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
 /* ===== VERDICT COMPARISON CARD ===== */
 .comparison-card {
   display: flex;

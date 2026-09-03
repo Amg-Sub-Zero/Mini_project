@@ -158,6 +158,12 @@ function showResult(verdict, score, flags, aiReason, aiAvailable, ruleResult, ai
   }
 
   panel.style.display = 'flex';
+  // Store text for TTS
+  _ttsText = buildSpeechText(verdict, score, aiReason, ruleResult);
+  // Reset TTS button state
+  const ttsBtn = document.getElementById('ttsBtn');
+  if (ttsBtn) { ttsBtn.textContent = '🔊 Read Result'; ttsBtn.dataset.speaking = 'false'; }
+
   setTimeout(() => {
     panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }, 50);
@@ -165,6 +171,7 @@ function showResult(verdict, score, flags, aiReason, aiAvailable, ruleResult, ai
 
 function hideResult() {
   document.getElementById('resultPanel').style.display = 'none';
+  stopSpeech(); // stop any ongoing reading when result is hidden
 }
 
 function resetScan() {
@@ -176,6 +183,74 @@ function resetScan() {
   document.getElementById('urlInput').value = '';
   document.getElementById('messageCount').textContent = '0 characters';
   document.getElementById('emailCount').textContent = '0 characters';
+}
+
+// ===== TEXT-TO-SPEECH =====
+// Reads the scan result aloud for users who have difficulty reading.
+
+let _ttsText = '';         // stores the last result text to read
+let _lastVoiceGender = 'male'; // tracks last used gender so next read alternates
+
+function buildSpeechText(verdict, score, aiReason, ruleResult) {
+  const parts = [
+    `Scan result: ${verdict.label}.`,
+    `Risk score: ${score} out of 100.`,
+    verdict.sub
+  ];
+  if (aiReason) parts.push(`AI says: ${aiReason}`);
+  if (ruleResult) parts.push(`Rule-based verdict: ${ruleResult}.`);
+  return parts.join(' ');
+}
+
+function readResult() {
+  if (!window.speechSynthesis) {
+    alert('Sorry, your browser does not support text-to-speech.');
+    return;
+  }
+  if (!_ttsText) return;
+
+  // Cancel any ongoing speech first
+  window.speechSynthesis.cancel();
+
+  const utterance = new SpeechSynthesisUtterance(_ttsText);
+  utterance.rate = 0.95;
+  utterance.pitch = 1;
+  utterance.lang = 'en-US';
+
+  // ── Pick a voice, alternating gender each time ──
+  const allVoices = window.speechSynthesis.getVoices().filter(v => v.lang.startsWith('en'));
+  if (allVoices.length > 0) {
+    const femaleVoices = allVoices.filter(v => /female|woman|girl/i.test(v.name));
+    const maleVoices   = allVoices.filter(v => /male|man|guy/i.test(v.name));
+
+    let pool;
+    if (femaleVoices.length > 0 && maleVoices.length > 0) {
+      // Alternate: if last was female pick male pool, and vice versa
+      pool = _lastVoiceGender === 'female' ? maleVoices : femaleVoices;
+      _lastVoiceGender = _lastVoiceGender === 'female' ? 'male' : 'female';
+    } else {
+      // Device only has one gender — just rotate randomly through all English voices
+      pool = allVoices;
+    }
+    utterance.voice = pool[Math.floor(Math.random() * pool.length)];
+  }
+
+  const btn = document.getElementById('ttsBtn');
+
+  utterance.onstart = () => {
+    if (btn) { btn.textContent = '⏹ Stop Reading'; btn.dataset.speaking = 'true'; }
+  };
+  utterance.onend = utterance.onerror = () => {
+    if (btn) { btn.textContent = '🔊 Read Result'; btn.dataset.speaking = 'false'; }
+  };
+
+  window.speechSynthesis.speak(utterance);
+}
+
+function stopSpeech() {
+  if (window.speechSynthesis) window.speechSynthesis.cancel();
+  const btn = document.getElementById('ttsBtn');
+  if (btn) { btn.textContent = '🔊 Read Result'; btn.dataset.speaking = 'false'; }
 }
 
 // ===== WIRE UP BUTTONS via addEventListener (no onclick in HTML) =====
@@ -197,4 +272,13 @@ document.getElementById('scanUrlBtn').addEventListener('click', (e) => {
 document.getElementById('resetScanBtn').addEventListener('click', (e) => {
   e.preventDefault();
   resetScan();
+});
+
+document.getElementById('ttsBtn').addEventListener('click', () => {
+  const btn = document.getElementById('ttsBtn');
+  if (btn.dataset.speaking === 'true') {
+    stopSpeech();
+  } else {
+    readResult();
+  }
 });
