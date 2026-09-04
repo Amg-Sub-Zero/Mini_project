@@ -72,3 +72,12 @@ def get_scans():
     user_id = int(get_jwt_identity())
     scans   = Scan.query.filter_by(user_id=user_id).order_by(Scan.created_at.desc()).all()
     return jsonify({"scans": [s.to_dict() for s in scans]}), 200
+
+
+@scan_bp.route("/scans", methods=["DELETE"])
+@jwt_required()
+def clear_scans():
+    user_id = int(get_jwt_identity())
+    Scan.query.filter_by(user_id=user_id).delete()
+    db.session.commit()
+    return jsonify({"message": "Scan history cleared."}), 200

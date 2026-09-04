@@ -133,8 +133,42 @@ document.getElementById('filterResult').addEventListener('change', applyFilters)
 document.getElementById('filterType').addEventListener('change', applyFilters);
 
 // ===== CLEAR HISTORY =====
-document.getElementById('clearBtn').addEventListener('click', () => {
-  alert('Clear history will be available in a future update.');
+document.getElementById('clearBtn').addEventListener('click', async () => {
+  if (!confirm('Are you sure you want to delete all your scan history? This cannot be undone.')) return;
+
+  const token = localStorage.getItem('access_token');
+  if (!token) { window.location.replace('login.html'); return; }
+
+  const btn = document.getElementById('clearBtn');
+  btn.disabled = true;
+  btn.textContent = 'Clearing…';
+
+  try {
+    const response = await fetch(`${API_BASE}/api/scans`, {
+      method: 'DELETE',
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+
+    if (response.status === 401) {
+      localStorage.removeItem('access_token');
+      window.location.replace('login.html');
+      return;
+    }
+
+    if (!response.ok) {
+      alert('Failed to clear history. Please try again.');
+      return;
+    }
+
+    allScans = [];
+    applyFilters();
+
+  } catch (err) {
+    alert('Could not reach the server. Make sure the backend is running.');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '🗑 Clear History';
+  }
 });
 
 // ===== INIT =====
