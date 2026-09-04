@@ -188,8 +188,7 @@ function resetScan() {
 // ===== TEXT-TO-SPEECH =====
 // Reads the scan result aloud for users who have difficulty reading.
 
-let _ttsText = '';         // stores the last result text to read
-let _lastVoiceGender = 'male'; // tracks last used gender so next read alternates
+let _ttsText = ''; // stores the last result text to read
 
 function buildSpeechText(verdict, score, aiReason, ruleResult) {
   const parts = [
@@ -216,24 +215,6 @@ function readResult() {
   utterance.rate = 0.95;
   utterance.pitch = 1;
   utterance.lang = 'en-US';
-
-  // ── Pick a voice, alternating gender each time ──
-  const allVoices = window.speechSynthesis.getVoices().filter(v => v.lang.startsWith('en'));
-  if (allVoices.length > 0) {
-    const femaleVoices = allVoices.filter(v => /female|woman|girl/i.test(v.name));
-    const maleVoices   = allVoices.filter(v => /male|man|guy/i.test(v.name));
-
-    let pool;
-    if (femaleVoices.length > 0 && maleVoices.length > 0) {
-      // Alternate: if last was female pick male pool, and vice versa
-      pool = _lastVoiceGender === 'female' ? maleVoices : femaleVoices;
-      _lastVoiceGender = _lastVoiceGender === 'female' ? 'male' : 'female';
-    } else {
-      // Device only has one gender — just rotate randomly through all English voices
-      pool = allVoices;
-    }
-    utterance.voice = pool[Math.floor(Math.random() * pool.length)];
-  }
 
   const btn = document.getElementById('ttsBtn');
 
