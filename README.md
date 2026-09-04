@@ -1,6 +1,6 @@
 # ScamShield AI
 
-A full-stack web application that helps users identify online scams by analyzing suspicious text messages, emails, and URLs. It combines rule-based pattern detection with Groq AI to produce a verdict, risk score, and plain-English explanation for every scan.
+A full-stack web application that helps users identify online scams by analyzing suspicious text messages, emails, and URLs. It combines rule-based pattern detection with Groq AI to produce a verdict, risk score, and plain-English explanation for every scan. It also integrates directly with Gmail to automatically scan and filter scam emails from your inbox.
 
 ---
 
@@ -15,12 +15,13 @@ A full-stack web application that helps users identify online scams by analyzing
 - **Verdict Comparison Card** — the result panel shows both the AI verdict and rule-based verdict side by side
 - **Risk Score** — every scan is scored 0–100 based on detected keyword/pattern matches
 - **Text-to-Speech** — a "🔊 Read Result" button reads the scan result aloud, alternating between male and female voices on each press (uses the browser's built-in Web Speech API, no install required)
-- **Scan History** — full log of every scan, searchable and filterable by type and result
-- **Dashboard** — summary stats (total scans, scams detected, safe, suspicious) with recent activity
+- **Gmail Integration** — connect your Gmail account and ScamShield will automatically scan your inbox every 5 minutes, move scam emails to Trash, and label suspicious ones — no manual action required
+- **Scan History** — full log of every scan (manual and auto), searchable and filterable by type and result
+- **Dashboard** — summary stats (total scans, scams detected, safe, suspicious, auto-scanned emails) with recent activity
 - **User Accounts** — register, verify, log in, and log out; each user only sees their own scans
 - **JWT Authentication** — all protected API endpoints require a valid Bearer token
 - **Session Persistence** — `localStorage` is the source of truth for login state; opening a new tab or restarting the browser no longer forces re-login while the token is still valid
-- **Profile Page** — displays account info, member since date, total scan count, and a custom avatar
+- **Profile Page** — displays account info, member since date, total scan count, custom avatar, and Gmail integration controls
 - **Responsive Design** — works on desktop, laptop, tablet, and phone
 - **XSS Protection** — all user-controlled content is HTML-escaped before being injected into the DOM
 
@@ -35,7 +36,9 @@ A full-stack web application that helps users identify online scams by analyzing
 | Database | SQLite via Flask-SQLAlchemy |
 | AI | Groq API (`groq/compound-mini`) |
 | Auth | JWT (JSON Web Tokens) |
-| Email | Gmail SMTP via Python `smtplib` |
+| Email (verification) | Gmail SMTP via Python `smtplib` |
+| Gmail Integration | Google Gmail API via OAuth 2.0 |
+| Background Jobs | APScheduler |
 | TTS | Web Speech API (browser built-in) |
 
 ---
@@ -46,11 +49,11 @@ A full-stack web application that helps users identify online scams by analyzing
 Mini_project/
 ├── backend/
 │   ├── app/
-│   │   ├── models/         # User and Scan database models
-│   │   ├── routes/         # auth.py (register, login, verify, profile) + scan.py
-│   │   ├── services/       # scan_service.py, groq_service.py, email_service.py
+│   │   ├── models/         # User, Scan, GmailConnection database models
+│   │   ├── routes/         # auth.py, scan.py, gmail.py, health.py
+│   │   ├── services/       # scan_service.py, groq_service.py, email_service.py, gmail_service.py
 │   │   ├── config.py       # Environment config via .env
-│   │   └── __init__.py     # Flask app factory
+│   │   └── __init__.py     # Flask app factory + APScheduler setup
 │   ├── .env                # Secret keys and credentials (not committed)
 │   ├── requirements.txt
 │   └── run.py
@@ -71,15 +74,39 @@ Mini_project/
 
 ## API Endpoints
 
+### Auth & Profile
+
 | Method | Endpoint | Auth | Description |
 |---|---|---|---|
 | POST | `/api/register` | No | Create a new account, sends verification email |
 | GET | `/api/verify/<token>` | No | Verify email and activate account (expires in 5 min) |
 | POST | `/api/login` | No | Log in (requires verified account), returns JWT |
 | GET | `/api/profile` | JWT | Get current user info + total scan count |
-| POST | `/api/scan` | JWT | Run a scan (AI + rule-based), save result to DB |
+
+### Scanning
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| POST | `/api/scan` | JWT | Run a manual scan (AI + rule-based), save result to DB |
 | GET | `/api/scans` | JWT | Get all scans for current user |
-| GET | `/health` | No | Backend health check |
+| DELETE | `/api/scans` | JWT | Clear all scans for current user |
+
+### Gmail Integration
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| GET | `/api/gmail/auth-url` | JWT | Returns the Google OAuth consent URL |
+| GET | `/api/gmail/callback` | No | OAuth callback — saves tokens, redirects to profile |
+| GET | `/api/gmail/status` | JWT | Returns connection status and settings |
+| DELETE | `/api/gmail/disconnect` | JWT | Removes the Gmail connection |
+| PATCH | `/api/gmail/settings` | JWT | Update scam/suspicious action preferences |
+| POST | `/api/gmail/scan-now` | JWT | Manually trigger an inbox scan |
+
+### Other
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| GET | `/health` | No | Backend liveness check |
 
 ### Scan response fields
 
@@ -138,10 +165,16 @@ MAIL_PASSWORD=your-gmail-app-password
 
 # CORS — comma-separated list of allowed frontend origins
 FRONTEND_ORIGIN=http://127.0.0.1:5500,http://localhost:5500
+
+# Google OAuth — for Gmail integration
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+GOOGLE_REDIRECT_URI=http://127.0.0.1:5000/api/gmail/callback
 ```
 
 - Get a free Groq API key at [https://console.groq.com](https://console.groq.com)
-- For Gmail, enable 2-Step Verification and generate an App Password at [https://myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords)
+- For Gmail SMTP, enable 2-Step Verification and generate an App Password at [https://myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords)
+- For Google OAuth credentials, see the Gmail Integration Setup section below
 - If accessing from another device on the same network, add its IP to `FRONTEND_ORIGIN`, e.g. `http://192.168.x.x:5500`
 
 ### 4. Start the backend
@@ -150,7 +183,7 @@ FRONTEND_ORIGIN=http://127.0.0.1:5500,http://localhost:5500
 python run.py
 ```
 
-The API runs at `http://127.0.0.1:5000`. The backend binds to `0.0.0.0` so other devices on the same LAN can reach it.
+The API runs at `http://127.0.0.1:5000`. The backend binds to `0.0.0.0` so other devices on the same LAN can reach it. APScheduler starts automatically and polls connected Gmail inboxes every 5 minutes.
 
 ### 5. Open the frontend
 
@@ -166,7 +199,50 @@ Open `index.html` with VS Code Live Server or any local HTTP server. Do **not** 
 4. User logs in — login is blocked until email is verified
 5. Verification links expire after **5 minutes**. If expired, the user sees an "expired" message and must register again
 
-> **Database note:** The `users` table has a `verification_token_created_at` nullable column and the `scans` table has `ai_verdict`, `ai_reason`, `ai_available` nullable columns added after initial release. If you have an existing `scamshield.db`, run the backend once and these will be added automatically, or run the migration script manually via `ALTER TABLE`.
+---
+
+## Gmail Integration Setup
+
+The Gmail integration uses Google OAuth 2.0. To set it up:
+
+### 1. Create a Google Cloud project
+- Go to [https://console.cloud.google.com](https://console.cloud.google.com)
+- Create a new project named `ScamShield`
+
+### 2. Enable the Gmail API
+- Go to **APIs & Services → Library**
+- Search for **Gmail API** and enable it
+
+### 3. Configure the OAuth consent screen
+- Go to **APIs & Services → OAuth consent screen**
+- Choose **External**, fill in the app name and contact email
+- Add the scope: `https://www.googleapis.com/auth/gmail.modify`
+- Under **Test users**, add the Gmail addresses that are allowed to connect
+
+### 4. Create OAuth credentials
+- Go to **APIs & Services → Credentials → Create Credentials → OAuth client ID**
+- Application type: **Web application**
+- Add authorized redirect URI: `http://127.0.0.1:5000/api/gmail/callback`
+- Copy the **Client ID** and **Client Secret** into your `.env`
+
+### How users connect
+1. Log in to ScamShield
+2. Go to **Profile** in the sidebar
+3. Scroll to the **Gmail Integration** card
+4. Click **🔗 Connect Gmail**
+5. Approve access on the Google consent screen
+6. ScamShield will now scan the inbox every 5 minutes automatically
+
+### Testing mode limitation
+The app is currently in Google's **testing mode**, which means only Gmail addresses manually added to the test users list in Google Cloud Console can connect. To allow a new user to connect their Gmail, add their address in **OAuth consent screen → Test users** before they attempt to connect. To open the integration to all users without restriction, the app would need to go through Google's official verification process.
+
+### What happens during an auto-scan
+- Fetches up to 20 unread emails from the inbox per run
+- Each email (sender + subject + body) is passed through the same dual detection engine used for manual scans
+- **Scam** → moved to Trash (or labeled, depending on user settings)
+- **Suspicious** → labeled "ScamShield - Suspicious" (or ignored, depending on settings)
+- **Safe** → untouched
+- All results are saved to scan history and visible on the dashboard with an **Auto** badge
 
 ---
 
@@ -176,7 +252,8 @@ Open `index.html` with VS Code Live Server or any local HTTP server. Do **not** 
 - CORS is scoped to specific frontend origins via `FRONTEND_ORIGIN` env var — no wildcard
 - JWT is stored in `localStorage`; `sessionStorage` holds only cached display data
 - Verification tokens are single-use, cleared on use or expiry
-- `.env`, `*.db`, `__pycache__/`, and `serviceAccountKey.json` are gitignored
+- OAuth tokens are stored in the database and refreshed automatically when expired
+- `.env`, `*.db`, `__pycache__/`, `client_secret*.json`, and `token*.json` are gitignored
 
 ---
 
