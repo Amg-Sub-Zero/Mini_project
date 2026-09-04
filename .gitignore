@@ -22,3 +22,22 @@ env/
 # Firebase service account key — contains private credentials, never commit
 backend/serviceAccountKey.json
 serviceAccountKey.json
+
+# Google OAuth credentials — never commit these
+backend/client_secret*.json
+client_secret*.json
+google_credentials*.json
+token.json
+token*.json
+
+# Gmail integration test page — dev helper only, not part of the app
+gmail_connect.html
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+logs/
