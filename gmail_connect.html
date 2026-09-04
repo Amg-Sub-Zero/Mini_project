@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Connect Gmail — ScamShield</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <script>
+    if (!localStorage.getItem('access_token')) {
+      window.location.replace('login.html');
+    }
+  </script>
+</head>
+<body style="display:flex; align-items:center; justify-content:center; min-height:100vh;">
+  <div style="text-align:center; font-family:sans-serif;">
+    <h2>🛡️ ScamShield — Gmail Connect</h2>
+    <p id="msg">Redirecting to Google…</p>
+  </div>
+
+  <script>
+    const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+      ? 'http://127.0.0.1:5000'
+      : `http://${window.location.hostname}:5000`;
+
+    // We can't redirect the browser with an Authorization header,
+    // so we ask the backend for the OAuth URL and then redirect manually.
+    (async () => {
+      const token = localStorage.getItem('access_token');
+      try {
+        const res  = await fetch(`${API_BASE}/api/gmail/auth-url`, {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const data = await res.json();
+        if (data.auth_url) {
+          window.location.href = data.auth_url;
+        } else {
+          document.getElementById('msg').textContent = '❌ ' + (data.error || 'Could not get auth URL.');
+        }
+      } catch (err) {
+        document.getElementById('msg').textContent = '❌ Could not reach the backend.';
+      }
+    })();
+  </script>
+</body>
+</html>

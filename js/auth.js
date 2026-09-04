@@ -37,7 +37,14 @@ document.getElementById('loginForm')?.addEventListener('submit', async function 
         id:    data.user.id
       }));
 
-      window.location.href = 'dashboard.html';
+      // If we were in the middle of an OAuth flow, go back there
+      const returnTo = sessionStorage.getItem('post_login_redirect');
+      if (returnTo) {
+        sessionStorage.removeItem('post_login_redirect');
+        window.location.href = returnTo;
+      } else {
+        window.location.href = 'dashboard.html';
+      }
     } else if (response.status === 403) {
       // Account not verified
       errorEl.textContent = '❌ ' + data.error;

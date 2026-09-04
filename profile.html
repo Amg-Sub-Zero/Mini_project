@@ -77,6 +77,65 @@
         </div>
       </div>
 
+      <!-- GMAIL INTEGRATION CARD -->
+      <div class="gmail-card" id="gmailCard">
+        <div class="gmail-card-header">
+          <div class="gmail-card-title">
+            <span class="gmail-icon">📧</span>
+            <div>
+              <h2>Gmail Integration</h2>
+              <p>Automatically scan and filter scam emails from your inbox.</p>
+            </div>
+          </div>
+          <span class="gmail-status-badge" id="gmailStatusBadge">Checking…</span>
+        </div>
+
+        <!-- NOT CONNECTED STATE -->
+        <div id="gmailDisconnected">
+          <p class="gmail-desc">Connect your Gmail account to let ScamShield automatically scan incoming emails every 5 minutes and move scams to Trash.</p>
+          <button class="btn btn-primary" id="gmailConnectBtn">🔗 Connect Gmail</button>
+        </div>
+
+        <!-- CONNECTED STATE -->
+        <div id="gmailConnected" style="display:none;">
+          <div class="gmail-info-row">
+            <span class="profile-field-label">Connected Account</span>
+            <span class="profile-field-value" id="gmailAddress">—</span>
+          </div>
+          <div class="gmail-info-row">
+            <span class="profile-field-label">Last Scanned</span>
+            <span class="profile-field-value" id="gmailLastScanned">Never</span>
+          </div>
+
+          <!-- Settings -->
+          <div class="gmail-settings">
+            <h3>Auto-action Settings</h3>
+            <div class="gmail-setting-row">
+              <label for="scamAction">When a scam is detected</label>
+              <select id="scamAction" class="filter-select">
+                <option value="trash">Move to Trash</option>
+                <option value="label">Add Label only</option>
+              </select>
+            </div>
+            <div class="gmail-setting-row">
+              <label for="suspiciousAction">When suspicious content is found</label>
+              <select id="suspiciousAction" class="filter-select">
+                <option value="label">Add Label</option>
+                <option value="nothing">Do nothing</option>
+              </select>
+            </div>
+            <button class="btn btn-outline btn-sm" id="gmailSaveSettingsBtn">Save Settings</button>
+            <span class="gmail-settings-saved" id="gmailSettingsSaved" style="display:none;">✅ Saved</span>
+          </div>
+
+          <div class="gmail-actions">
+            <button class="btn btn-primary btn-sm" id="gmailScanNowBtn">⚡ Scan Now</button>
+            <button class="btn btn-outline btn-sm danger" id="gmailDisconnectBtn">🔌 Disconnect</button>
+          </div>
+          <div class="gmail-scan-result" id="gmailScanResult" style="display:none;"></div>
+        </div>
+      </div>
+
     </main>
   </div>
 

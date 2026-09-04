@@ -4,3 +4,7 @@ flask-cors==4.0.1
 python-dotenv==1.0.1
 flask-jwt-extended==4.6.0
 openai>=1.57.0,<2.0.0
+google-auth>=2.56.0
+google-auth-oauthlib==1.2.0
+google-api-python-client>=2.128.0
+APScheduler==3.10.4
