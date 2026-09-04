@@ -39,11 +39,13 @@ function renderStats(scans) {
   const scamCount = scans.filter(s => s.result === 'scam').length;
   const safeCount = scans.filter(s => s.result === 'safe').length;
   const suspCount = scans.filter(s => s.result === 'suspicious').length;
+  const autoCount = scans.filter(s => s.input_text.startsWith('[Auto]')).length;
 
-  document.getElementById('statTotal').textContent      = total;
-  document.getElementById('statScam').textContent       = scamCount;
-  document.getElementById('statSafe').textContent       = safeCount;
-  document.getElementById('statSuspicious').textContent = suspCount;
+  document.getElementById('statTotal').textContent        = total;
+  document.getElementById('statScam').textContent         = scamCount;
+  document.getElementById('statSafe').textContent         = safeCount;
+  document.getElementById('statSuspicious').textContent   = suspCount;
+  document.getElementById('statAutoScanned').textContent  = autoCount;
 }
 
 function renderRecentScans(scans) {
@@ -64,12 +66,15 @@ function renderRecentScans(scans) {
   const recent = scans.slice(0, 10);
   tbody.innerHTML = recent.map(scan => {
     const date = new Date(scan.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-    const preview = scan.input_text.length > 80 ? scan.input_text.slice(0, 80) + '…' : scan.input_text;
+    const isAuto    = scan.input_text.startsWith('[Auto]');
+    const rawText   = isAuto ? scan.input_text.replace(/^\[Auto\]\s*/, '') : scan.input_text;
+    const preview   = rawText.length > 80 ? rawText.slice(0, 80) + '…' : rawText;
     const safePreview = escapeHtml(preview);
-    const safeTitle   = escapeHtml(scan.input_text);
+    const safeTitle   = escapeHtml(rawText);
+    const autoBadge   = isAuto ? '<span class="auto-badge">Auto</span> ' : '';
     return `
       <tr>
-        <td title="${safeTitle}">${safePreview}</td>
+        <td title="${safeTitle}">${autoBadge}${safePreview}</td>
         <td><span class="type-tag">${capitalize(scan.scan_type)}</span></td>
         <td><span class="badge-${scan.result}">${capitalize(scan.result)}</span></td>
         <td>${date}</td>

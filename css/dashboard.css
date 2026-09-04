@@ -202,10 +202,11 @@
   line-height: 1;
 }
 
-.stat-card-number.red { color: #f87171; }
-.stat-card-number.green { color: #4ade80; }
+.stat-card-number.red    { color: #f87171; }
+.stat-card-number.green  { color: #4ade80; }
 .stat-card-number.yellow { color: #fbbf24; }
-.stat-card-number:not(.red):not(.green):not(.yellow) { color: var(--primary); }
+.stat-card-number.purple { color: #a78bfa; }
+.stat-card-number:not(.red):not(.green):not(.yellow):not(.purple) { color: var(--primary); }
 
 .stat-card-label { color: var(--text-muted); font-size: 0.85rem; margin-top: 0.25rem; }
 
@@ -292,6 +293,20 @@
   padding: 0.2rem 0.65rem;
   border-radius: 20px;
   font-size: 0.8rem;
+}
+
+.auto-badge {
+  display: inline-block;
+  background: rgba(167, 139, 250, 0.15);
+  color: #a78bfa;
+  border: 1px solid rgba(167, 139, 250, 0.3);
+  padding: 0.1rem 0.45rem;
+  border-radius: 20px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  vertical-align: middle;
+  margin-right: 0.25rem;
 }
 
 /* ===== RESPONSIVE ===== */
