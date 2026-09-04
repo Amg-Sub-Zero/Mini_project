@@ -95,6 +95,13 @@
   text-decoration: none;
 }
 
+/* Groups theme toggle + avatar together on the right of the topbar */
+.topbar-right-group {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
 .topbar-avatar {
   display: flex;
   align-items: center;
