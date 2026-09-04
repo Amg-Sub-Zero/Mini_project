@@ -27,7 +27,7 @@ class User(db.Model):
         return self.verification_token
 
     def is_verification_token_expired(self):
-        """Returns True if the token is older than 20 minutes. None created_at = not expired."""
+        """Returns True if the token is older than 5 minutes. None created_at = not expired."""
         if self.verification_token_created_at is None:
             return False
         created = self.verification_token_created_at
