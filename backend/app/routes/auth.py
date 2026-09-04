@@ -23,19 +23,34 @@ def register():
     if len(password) < 5:
         return jsonify({"error": "Password must be at least 5 characters"}), 400
 
-    if User.query.filter_by(email=email).first():
-        return jsonify({"error": "An account with this email already exists"}), 409
+    # Build the backend base URL now — needed for both new and resend paths
+    host     = request.host
+    scheme   = "http"
+    base_url = f"{scheme}://{host}"
+
+    existing = User.query.filter_by(email=email).first()
+    if existing:
+        if existing.is_verified:
+            # Fully verified account — genuinely can't register again
+            return jsonify({"error": "An account with this email already exists"}), 409
+
+        # Unverified account — resend a fresh verification email
+        existing.full_name = full_name          # update name in case it changed
+        existing.set_password(password)         # update password in case it changed
+        token = existing.generate_verification_token()
+        db.session.commit()
+
+        send_verification_email(email, full_name, token, base_url)
+
+        return jsonify({
+            "message": "A new verification email has been sent. Please check your inbox."
+        }), 200
 
     user = User(full_name=full_name, email=email)
     user.set_password(password)
     token = user.generate_verification_token()
     db.session.add(user)
     db.session.commit()
-
-    # Build the backend base URL so the verify link hits the Flask server directly
-    host     = request.host  # e.g. 172.20.10.6:5000
-    scheme   = "http"
-    base_url = f"{scheme}://{host}"
 
     send_verification_email(email, full_name, token, base_url)
 
