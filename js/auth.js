@@ -1,6 +1,6 @@
 // ===== API BASE URL =====
 // Uses the same host as the current page so it works on any device on the network
-const API_BASE = const API_BASE = 'https://scamshield-backend-2p40.onrender.com';
+const API_BASE = 'https://scamshield-backend-2p40.onrender.com';
 
 // ===== LOGIN =====
 document.getElementById('loginForm')?.addEventListener('submit', async function (e) {
