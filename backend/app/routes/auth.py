@@ -1,4 +1,5 @@
-from flask import Blueprint, request, jsonify, redirect
+import threading
+from flask import Blueprint, request, jsonify, redirect, current_app
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 from app import db
 from app.models.user import User
@@ -6,6 +7,13 @@ from app.models.scan import Scan
 from app.services.email_service import send_verification_email
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/api")
+
+
+def send_verification_email_async(app, email, full_name, token, base_url):
+    """Run the (slow) SMTP call in a background thread so the HTTP
+    response doesn't wait on it."""
+    with app.app_context():
+        send_verification_email(email, full_name, token, base_url)
 
 
 @auth_bp.route("/register", methods=["POST"])
@@ -23,24 +31,30 @@ def register():
     if len(password) < 5:
         return jsonify({"error": "Password must be at least 5 characters"}), 400
 
-    # Build the backend base URL now — needed for both new and resend paths
+    # Build the backend base URL now â needed for both new and resend paths.
+    # Render sits behind a proxy that terminates TLS, so check the
+    # X-Forwarded-Proto header rather than assuming http.
     host     = request.host
-    scheme   = "http"
+    scheme   = request.headers.get("X-Forwarded-Proto", request.scheme)
     base_url = f"{scheme}://{host}"
 
     existing = User.query.filter_by(email=email).first()
     if existing:
         if existing.is_verified:
-            # Fully verified account — genuinely can't register again
+            # Fully verified account â genuinely can't register again
             return jsonify({"error": "An account with this email already exists"}), 409
 
-        # Unverified account — resend a fresh verification email
+        # Unverified account â resend a fresh verification email
         existing.full_name = full_name          # update name in case it changed
         existing.set_password(password)         # update password in case it changed
         token = existing.generate_verification_token()
         db.session.commit()
 
-        send_verification_email(email, full_name, token, base_url)
+        threading.Thread(
+            target=send_verification_email_async,
+            args=(current_app._get_current_object(), email, full_name, token, base_url),
+            daemon=True
+        ).start()
 
         return jsonify({
             "message": "A new verification email has been sent. Please check your inbox."
@@ -52,7 +66,11 @@ def register():
     db.session.add(user)
     db.session.commit()
 
-    send_verification_email(email, full_name, token, base_url)
+    threading.Thread(
+        target=send_verification_email_async,
+        args=(current_app._get_current_object(), email, full_name, token, base_url),
+        daemon=True
+    ).start()
 
     return jsonify({
         "message": "Account created. Please check your email to verify your account.",
@@ -64,9 +82,9 @@ def register():
 def verify_email(token):
     user = User.query.filter_by(verification_token=token).first()
 
-    # Frontend is on port 5500, backend on 5000 — same host
-    host         = request.host.split(":")[0]  # just the IP/hostname
-    frontend_url = f"http://{host}:5500"
+    # Use the first configured frontend origin (production URL) rather than
+    # hardcoding localhost:5500 â that only worked for local dev.
+    frontend_url = current_app.config["FRONTEND_ORIGINS"][0]
 
     if not user:
         return redirect(f"{frontend_url}/login.html?verify=invalid")
