@@ -22,7 +22,7 @@ def send_verification_email(to_email: str, full_name: str, token: str, base_url:
     Returns True on success, False on failure.
     """
     if not MAIL_USERNAME or not MAIL_PASSWORD:
-        print("[email_service] MAIL_USERNAME or MAIL_PASSWORD not set — skipping email.")
+        print("[email_service] MAIL_USERNAME or MAIL_PASSWORD not set — skipping email.", flush=True)
         return False
 
     # Link goes directly to backend — works from any network as long as backend is reachable
@@ -63,9 +63,9 @@ def send_verification_email(to_email: str, full_name: str, token: str, base_url:
             server.login(MAIL_USERNAME, MAIL_PASSWORD)
             server.sendmail(MAIL_USERNAME, to_email, msg.as_string())
 
-        print(f"[email_service] Verification email sent to {to_email}")
+        print(f"[email_service] Verification email sent to {to_email}", flush=True)
         return True
 
     except Exception as e:
-        print(f"[email_service] Failed to send email: {e}")
+        print(f"[email_service] Failed to send email: {e}", flush=True)
         return False
