@@ -1,7 +1,7 @@
 import os
 from datetime import datetime, timezone
 
-from flask import Blueprint, redirect, request, jsonify
+from flask import Blueprint, redirect, request, jsonify, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from google_auth_oauthlib.flow import Flow
 from googleapiclient.discovery import build
@@ -33,7 +33,7 @@ def _flow() -> Flow:
     )
 
 
-# ── Step 1a: Return the OAuth URL as JSON (for frontend fetch) ───────────────
+# ââ Step 1a: Return the OAuth URL as JSON (for frontend fetch) âââââââââââââââ
 
 @gmail_bp.route("/auth-url")
 @jwt_required()
@@ -49,7 +49,7 @@ def auth_url():
     return jsonify({"auth_url": url}), 200
 
 
-# ── Step 1b: Redirect user to Google consent page (legacy / direct) ──────────
+# ââ Step 1b: Redirect user to Google consent page (legacy / direct) ââââââââââ
 
 @gmail_bp.route("/connect")
 @jwt_required()
@@ -65,12 +65,13 @@ def connect():
     return redirect(auth_url)
 
 
-# ── Step 2: Google redirects back here with the auth code ────────────────────
+# ââ Step 2: Google redirects back here with the auth code ââââââââââââââââââââ
 
 @gmail_bp.route("/callback")
 def callback():
-    host         = request.host.split(":")[0]
-    frontend_url = f"http://{host}:5500"
+    # Use the configured frontend origin (production URL) rather than
+    # hardcoding localhost:5500 â that only worked for local dev.
+    frontend_url = current_app.config["FRONTEND_ORIGINS"][0]
 
     error = request.args.get("error")
     if error:
@@ -97,7 +98,7 @@ def callback():
         profile      = service.users().getProfile(userId="me").execute()
         gmail_address = profile.get("emailAddress", "")
 
-        # Upsert — one connection per user
+        # Upsert â one connection per user
         conn = GmailConnection.query.filter_by(user_id=user_id).first()
         if conn:
             conn.access_token  = creds.token
@@ -124,7 +125,7 @@ def callback():
         return redirect(f"{frontend_url}/profile.html?gmail=error")
 
 
-# ── Status ────────────────────────────────────────────────────────────────────
+# ââ Status ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 
 @gmail_bp.route("/status")
 @jwt_required()
@@ -136,7 +137,7 @@ def status():
     return jsonify({"connected": conn.is_active, "connection": conn.to_dict()}), 200
 
 
-# ── Disconnect ────────────────────────────────────────────────────────────────
+# ââ Disconnect ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 
 @gmail_bp.route("/disconnect", methods=["DELETE"])
 @jwt_required()
@@ -149,7 +150,7 @@ def disconnect():
     return jsonify({"message": "Gmail disconnected."}), 200
 
 
-# ── Update settings (scam_action / suspicious_action) ────────────────────────
+# ââ Update settings (scam_action / suspicious_action) ââââââââââââââââââââââââ
 
 @gmail_bp.route("/settings", methods=["PATCH"])
 @jwt_required()
@@ -169,7 +170,7 @@ def update_settings():
     return jsonify({"message": "Settings updated.", "connection": conn.to_dict()}), 200
 
 
-# ── Manual trigger (for testing) ─────────────────────────────────────────────
+# ââ Manual trigger (for testing) âââââââââââââââââââââââââââââââââââââââââââââ
 
 @gmail_bp.route("/scan-now", methods=["POST"])
 @jwt_required()
