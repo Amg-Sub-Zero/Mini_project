@@ -48,6 +48,7 @@ def get_ai_analysis(input_text: str, scan_type: str, rule_result: str, flags: li
 
     api_key = os.getenv("GROQ_API_KEY", "").strip()
     if not api_key:
+        print("[groq_service] GROQ_API_KEY not set — using rule-based fallback.", flush=True)
         return _fallback(rule_result, flags)
 
     prompt = f"""You are a scam detection expert. A user submitted the following {scan_type} for analysis.
@@ -83,11 +84,14 @@ Respond with ONLY a JSON object in this exact format (no extra text):
         reason  = parsed.get("reason", "").strip()
 
         if verdict not in VALID_VERDICTS or not reason:
+            print(f"[groq_service] Malformed response, falling back. Raw: {raw!r}", flush=True)
             return _fallback(rule_result, flags)
 
         return {"verdict": verdict, "reason": reason, "available": True}
 
-    except (APIError, json.JSONDecodeError, AttributeError, ValueError):
+    except (APIError, json.JSONDecodeError, AttributeError, ValueError) as e:
+        print(f"[groq_service] Call failed, falling back. Error: {e}", flush=True)
         return _fallback(rule_result, flags)
-    except Exception:
+    except Exception as e:
+        print(f"[groq_service] Unexpected error, falling back. Error: {e}", flush=True)
         return _fallback(rule_result, flags)
