@@ -1,5 +1,6 @@
 import base64
 import os
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 
 from google.oauth2.credentials import Credentials
@@ -117,6 +118,9 @@ def scan_gmail_inbox(user_id: int) -> dict:
         scam_label_id       = None
         suspicious_label_id = None
 
+        # ── Pass 1: fetch + rule-analyze every message first (sequential —
+        # the Gmail API client isn't thread-safe, but this part is fast) ──────
+        fetched = []
         for msg_ref in messages:
             try:
                 msg      = service.users().messages().get(
@@ -130,20 +134,53 @@ def scan_gmail_inbox(user_id: int) -> dict:
                 if not body and not subject:
                     continue  # nothing to scan
 
-                input_text = f"{sender} {subject} {body}".strip()
-                scan_type  = "email"
-
-                # Run detection
-                analysis    = analyze(input_text, scan_type)
+                input_text  = f"{sender} {subject} {body}".strip()
+                analysis    = analyze(input_text, "email")
                 rule_result = get_verdict(analysis["score"])
-                ai          = get_ai_analysis(input_text, scan_type, rule_result, analysis["flags"])
-                final       = ai["verdict"] if ai["available"] else rule_result
 
+                fetched.append({
+                    "msg_ref": msg_ref, "subject": subject, "sender": sender,
+                    "input_text": input_text, "analysis": analysis,
+                    "rule_result": rule_result
+                })
+            except Exception as e:
+                print(f"[gmail_service] Error fetching message {msg_ref['id']}: {e}", flush=True)
+                summary["errors"] += 1
+
+        # ── Pass 2: run the slow part — AI analysis — concurrently instead
+        # of one email at a time, since each call is an independent network
+        # round-trip to Groq. This is what makes "Scan Now" feel slow. ───────
+        def _run_ai(item):
+            ai = get_ai_analysis(
+                item["input_text"], "email", item["rule_result"], item["analysis"]["flags"]
+            )
+            return item["msg_ref"]["id"], ai
+
+        ai_results = {}
+        with ThreadPoolExecutor(max_workers=min(10, len(fetched) or 1)) as pool:
+            futures = {pool.submit(_run_ai, item): item for item in fetched}
+            for future in as_completed(futures):
+                msg_id, ai = future.result()
+                ai_results[msg_id] = ai
+
+        # ── Pass 3: save results + take Gmail actions (sequential — DB
+        # session and Gmail modify/trash calls aren't safe to parallelize) ──
+        for item in fetched:
+            msg_ref     = item["msg_ref"]
+            subject     = item["subject"]
+            sender      = item["sender"]
+            input_text  = item["input_text"]
+            analysis    = item["analysis"]
+            rule_result = item["rule_result"]
+            ai          = ai_results.get(msg_ref["id"], {"verdict": None, "reason": "", "available": False})
+            final       = ai["verdict"] if ai["available"] else rule_result
+
+            try:
                 # Save to scans table
                 scan = Scan(
                     user_id      = user_id,
                     input_text   = f"[Auto] {subject or sender or input_text[:80]}",
-                    scan_type    = scan_type,
+                    scan_type    = "email",
                     result       = final,
                     risk_score   = analysis["score"],
                     flags        = ",".join(analysis["flags"]),
