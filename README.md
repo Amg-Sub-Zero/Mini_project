@@ -2,6 +2,9 @@
 
 A full-stack web application that helps users identify online scams by analyzing suspicious text messages, emails, and URLs. It combines rule-based pattern detection with Groq AI to produce a verdict, risk score, and plain-English explanation for every scan. It also integrates directly with Gmail to automatically scan and filter scam emails from your inbox.
 
+**Live app:** [https://scamshield-frontend-anry.onrender.com](https://scamshield-frontend-anry.onrender.com)
+**Backend API:** [https://scamshield-backend-2p40.onrender.com](https://scamshield-backend-2p40.onrender.com)
+
 ---
 
 ## Features
@@ -15,7 +18,7 @@ A full-stack web application that helps users identify online scams by analyzing
 - **Verdict Comparison Card** — the result panel shows both the AI verdict and rule-based verdict side by side
 - **Risk Score** — every scan is scored 0–100 based on detected keyword/pattern matches
 - **Text-to-Speech** — a "🔊 Read Result" button reads the scan result aloud, alternating between male and female voices on each press (uses the browser's built-in Web Speech API, no install required)
-- **Gmail Integration** — connect your Gmail account and ScamShield will automatically scan your inbox every 5 minutes, move scam emails to Trash, and label suspicious ones — no manual action required
+- **Gmail Integration** — connect your Gmail account and ScamShield will automatically scan your inbox every 5 minutes, move scam emails to Trash, and label suspicious ones — no manual action required. AI analysis for each batch of emails runs in parallel (not one at a time), so a scan of up to 20 emails completes in a few seconds instead of taking a minute or more.
 - **Scan History** — full log of every scan (manual and auto), searchable and filterable by type and result
 - **Dashboard** — summary stats (total scans, scams detected, safe, suspicious, auto-scanned emails) with recent activity
 - **User Accounts** — register, verify, log in, and log out; each user only sees their own scans
@@ -32,14 +35,16 @@ A full-stack web application that helps users identify online scams by analyzing
 | Layer | Technology |
 |---|---|
 | Frontend | HTML5, CSS3, Vanilla JavaScript |
-| Backend | Python, Flask, Flask-JWT-Extended |
-| Database | SQLite via Flask-SQLAlchemy |
+| Backend | Python, Flask, Flask-JWT-Extended, Gunicorn (production WSGI server) |
+| Database | PostgreSQL in production (Render), SQLite for local development — both via Flask-SQLAlchemy |
 | AI | Groq API (`groq/compound-mini`) |
 | Auth | JWT (JSON Web Tokens) |
-| Email (verification) | Gmail SMTP via Python `smtplib` |
+| Email (verification) | Brevo transactional email API (HTTPS) — see note below |
 | Gmail Integration | Google Gmail API via OAuth 2.0 |
 | Background Jobs | APScheduler |
 | TTS | Web Speech API (browser built-in) |
+
+> **Why Brevo instead of Gmail SMTP?** Render's free web service tier blocks outbound traffic on SMTP ports (25, 465, 587) to prevent spam abuse, so `smtplib` cannot reach `smtp.gmail.com` in production. Brevo's API sends email over plain HTTPS instead, which isn't blocked. Locally, either approach works, but the app is configured to use Brevo everywhere so behavior is identical between local and deployed environments.
 
 ---
 
@@ -153,15 +158,21 @@ pip install -r requirements.txt
 ```
 SECRET_KEY=your-secret-key
 JWT_SECRET_KEY=your-jwt-secret
+
+# Local development uses SQLite by default. In production (Render), this is
+# set to a PostgreSQL connection string instead — see Deployment section.
 DATABASE_URL=sqlite:///scamshield.db
+
 DEBUG=true
 
 # Groq AI — free tier, get your key at https://console.groq.com
 GROQ_API_KEY=your-groq-api-key
 
-# Gmail SMTP — for email verification
-MAIL_USERNAME=your-gmail@gmail.com
-MAIL_PASSWORD=your-gmail-app-password
+# Brevo — transactional email API for verification emails.
+# Sign up free at https://brevo.com, verify a sender email under
+# Senders, Domains & Dedicated IPs, then generate a key under SMTP & API.
+BREVO_API_KEY=your-brevo-api-key
+BREVO_SENDER_EMAIL=your-verified-sender@example.com
 
 # CORS — comma-separated list of allowed frontend origins
 FRONTEND_ORIGIN=http://127.0.0.1:5500,http://localhost:5500
@@ -172,9 +183,9 @@ GOOGLE_CLIENT_SECRET=your-google-client-secret
 GOOGLE_REDIRECT_URI=http://127.0.0.1:5000/api/gmail/callback
 ```
 
-- Get a free Groq API key at [https://console.groq.com](https://console.groq.com)
-- For Gmail SMTP, enable 2-Step Verification and generate an App Password at [https://myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords)
-- For Google OAuth credentials, see the Gmail Integration Setup section below
+- Get a free Groq API key at [https://console.groq.com](https://console.groq.com). Note: the free tier has a 100,000 token/day limit shared across the whole account — heavy testing in one day can exhaust it, in which case the app automatically falls back to the rule-based verdict (see `ai_available` in scan responses).
+- For Brevo, verifying a single sender email (not a domain) is enough to send to any recipient — no domain purchase required. See **Deployment** below for why Brevo is used instead of Gmail SMTP.
+- For Google OAuth credentials, see the Gmail Integration Setup section below. Double-check the Client ID is copied exactly — a single stray or missing character (e.g. from mobile copy-paste) causes a generic `Error 401: invalid_client` with no other clue as to the cause.
 - If accessing from another device on the same network, add its IP to `FRONTEND_ORIGIN`, e.g. `http://192.168.x.x:5500`
 
 ### 4. Start the backend
@@ -191,10 +202,45 @@ Open `index.html` with VS Code Live Server or any local HTTP server. Do **not** 
 
 ---
 
+## Deployment (Render)
+
+The app is deployed as two separate Render services (frontend as a static site, backend as a web service), plus a PostgreSQL database. A few production-specific things differ from local development — noting them here since they weren't obvious at first and cost real debugging time:
+
+### Backend service settings
+- **Build Command:** `pip install -r requirements.txt`
+- **Start Command:** `gunicorn -w 2 -b 0.0.0.0:$PORT run:app`
+  Render assigns a port dynamically via `$PORT` — the app must bind to that, not a hardcoded port like `5000`, or Render will never detect the service as live. Flask's built-in dev server (`app.run()`) is not used in production; `gunicorn` is.
+
+### Required environment variables on the backend service
+In addition to everything in the `.env` example above:
+
+| Variable | Value |
+|---|---|
+| `DATABASE_URL` | Render PostgreSQL's **Internal Database URL** (not the local SQLite path) |
+| `FRONTEND_ORIGIN` | `https://scamshield-frontend-anry.onrender.com` |
+| `GOOGLE_REDIRECT_URI` | `https://scamshield-backend-2p40.onrender.com/api/gmail/callback` (must exactly match an Authorized redirect URI in Google Cloud Console) |
+| `PYTHONUNBUFFERED` | `1` — without this, `print()` log statements from background threads can be buffered indefinitely and never show up in Render's Logs tab |
+| `ADMIN_SECRET_KEY` | *(optional)* only needed if using an internal admin route to inspect data directly |
+
+### Why PostgreSQL, not SQLite, in production
+Render's free web services run on an **ephemeral filesystem** — every redeploy, and every free-tier spin-down/spin-up cycle (services sleep after ~15 minutes of inactivity), gives the container a fresh disk. A SQLite file stored locally on that disk is wiped every time this happens, silently deleting all users and scan history. PostgreSQL is a separate managed service with its own persistent storage, unaffected by the backend's redeploys or sleep cycles.
+
+`config.py` reads `DATABASE_URL` from the environment and normalizes Render's `postgres://` connection string prefix to `postgresql://`, since modern SQLAlchemy requires the latter. Tables are created automatically on first startup via `db.create_all()` — no manual migration step needed.
+
+**Caveat:** Render's free PostgreSQL plan expires 30 days after creation, with a 14-day grace period to upgrade before data is deleted. For a long-lived deployment, either upgrade to a paid instance before expiry or create a fresh free database and update `DATABASE_URL` again.
+
+### Why Brevo, not Gmail SMTP, in production
+Covered above — Render blocks outbound SMTP ports on the free tier, so `smtplib` connections to Gmail hang or fail with `Network is unreachable`. Brevo's HTTPS-based API is unaffected by this restriction. `email_service.py` also uses a 10-second timeout and runs on a background thread so a slow/failed send never blocks the `/api/register` response.
+
+### `psycopg2-binary` version note
+Render's Python runtime tracks recent Python releases closely. `psycopg2-binary` only added Python 3.14 support in version `2.9.11` — pinning an older version causes an `undefined symbol: _PyInterpreterState_Get` crash on startup that has nothing to do with the database connection itself. `requirements.txt` is pinned to `2.9.11` or later for this reason.
+
+---
+
 ## Registration & Verification Flow
 
 1. User fills in the registration form
-2. Backend creates the account (unverified) and sends a verification email via Gmail SMTP
+2. Backend creates the account (unverified) and sends a verification email via Brevo's email API
 3. User clicks the link in the email — the backend verifies the token and redirects to the login page
 4. User logs in — login is blocked until email is verified
 5. Verification links expire after **5 minutes**. If expired, the user sees an "expired" message and must register again
@@ -221,9 +267,9 @@ The Gmail integration uses Google OAuth 2.0. To set it up:
 
 ### 4. Create OAuth credentials
 - Go to **APIs & Services → Credentials → Create Credentials → OAuth client ID**
-- Application type: **Web application**
-- Add authorized redirect URI: `http://127.0.0.1:5000/api/gmail/callback`
-- Copy the **Client ID** and **Client Secret** into your `.env`
+- Application type: **Web application** (Desktop app or other types will fail with `Error 401: invalid_client`)
+- Add authorized redirect URI(s): `http://127.0.0.1:5000/api/gmail/callback` for local dev, and `https://scamshield-backend-2p40.onrender.com/api/gmail/callback` for production — both can be listed at once
+- Copy the **Client ID** and **Client Secret** into your `.env` (locally) or Render's Environment tab (production). Copy carefully — a single extra or missing character is enough to break it with no other symptom than `invalid_client`.
 
 ### How users connect
 1. Log in to ScamShield
